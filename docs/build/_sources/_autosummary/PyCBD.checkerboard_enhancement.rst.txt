@@ -1,0 +1,32 @@
+PyCBD.checkerboard\_enhancement
+===============================
+
+.. automodule:: PyCBD.checkerboard_enhancement
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+
+
+.. rubric:: Modules
+
+.. autosummary::
+   :toctree:
+   :template: custom-module-template.rst
+   :recursive:
+
+   PyCBD.checkerboard_enhancement.checkerboard_enhancer
+

@@ -1,0 +1,30 @@
+PyCBD.logger\_configuration
+===========================
+
+.. automodule:: PyCBD.logger_configuration
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:
+   
+      configure_logger
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+
+

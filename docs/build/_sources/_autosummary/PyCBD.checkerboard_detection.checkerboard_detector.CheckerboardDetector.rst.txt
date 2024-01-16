@@ -1,0 +1,20 @@
+PyCBD.checkerboard\_detection.checkerboard\_detector.CheckerboardDetector
+=========================================================================
+
+.. currentmodule:: PyCBD.checkerboard_detection.checkerboard_detector
+
+.. autoclass:: CheckerboardDetector
+   :members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~CheckerboardDetector.__init__
+      ~CheckerboardDetector.detect_checkerboard
+   
+   

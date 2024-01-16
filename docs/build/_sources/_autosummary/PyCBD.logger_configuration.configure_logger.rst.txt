@@ -1,0 +1,6 @@
+PyCBD.logger\_configuration.configure\_logger
+=============================================
+
+.. currentmodule:: PyCBD.logger_configuration
+
+.. autofunction:: configure_logger

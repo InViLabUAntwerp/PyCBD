@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PyCBD.checkerboard_enhancement.checkerboard_enhancer &mdash; PyCBD 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            PyCBD
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme_link.html">Readme</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../_autosummary/PyCBD.html">PyCBD</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBD</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">PyCBD.checkerboard_enhancement.checkerboard_enhancer</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for PyCBD.checkerboard_enhancement.checkerboard_enhancer</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;This module contains the checkerboard enhancers.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">GPy</span>
+<span class="kn">from</span> <span class="nn">sklearn.preprocessing</span> <span class="kn">import</span> <span class="n">StandardScaler</span>
+<span class="kn">from</span> <span class="nn">scipy.spatial.distance</span> <span class="kn">import</span> <span class="n">cdist</span>
+<span class="kn">import</span> <span class="nn">cv2</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">numpy.typing</span> <span class="k">as</span> <span class="nn">npt</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+
+
+<div class="viewcode-block" id="CheckerboardEnhancer"><a class="viewcode-back" href="../../../_autosummary/PyCBD.checkerboard_enhancement.checkerboard_enhancer.CheckerboardEnhancer.html#PyCBD.checkerboard_enhancement.checkerboard_enhancer.CheckerboardEnhancer">[docs]</a><span class="k">class</span> <span class="nc">CheckerboardEnhancer</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Class for checkerboard enhancement with Gaussian processes</span>
+
+<span class="sd">    :var max_iterations: Determines the maximum allowed number of times you want to expand the local grid of</span>
+<span class="sd">       points (in xy-space on the checkerboard itself) and try to find matching detected corners (in the image in</span>
+<span class="sd">       uv-space).</span>
+<span class="sd">    :var max_expansion_factor: The maximum amount of times the local grid of points (x, y) can expand in either</span>
+<span class="sd">       direction without finding matching detected corners (u, v).</span>
+<span class="sd">    :var max_dist_factor: The GP models predict uv-coordinates for a new corner. The algorithm will try to match</span>
+<span class="sd">       those predictions to actual detected corners. This distance determines how far a detected corner can deviate from</span>
+<span class="sd">       a predicted one.</span>
+<span class="sd">    :var must_plot_GP_stuff: Set this to true if you want to visualize the GP predictions. You only need this in case</span>
+<span class="sd">       something is obviously wrong.</span>
+<span class="sd">    :var must_plot_iterations: Set this to true if you want to visualize each step of the algorithm. You only need this</span>
+<span class="sd">       in case something is obviously wrong.</span>
+<span class="sd">    :var max_nr_of_iters: Training the GPs means finding an optimal set of hyperparameters. This could in some case take</span>
+<span class="sd">       a lot of iterations. Lower this number if you want to limit this. In general, you should not have to change this.</span>
+<span class="sd">    :var optimizer: The optimizer used to train the GPs. In general, you should not have to change this.</span>
+<span class="sd">    :var num_restarts: The optimizer training the GPS could get stuck in a local optimum, although for well-behaved</span>
+<span class="sd">       checkerboards, this is rare. In general, you should not have to change this. If the results (log marginal</span>
+<span class="sd">       likelihood values) do not differ much, then you could get away with setting this to zero (no restarts).</span>
+<span class="sd">    :var lengthscale_bounded: In case the GPs end up with weird predictions, especially when working with only a few</span>
+<span class="sd">       detected corners, you could try to work with bounds (limits) for the lengthscale.</span>
+<span class="sd">    :var min_lengthscale: If lengthscale_bounded = True, this values puts a lower limit on the allowed lengthscale.</span>
+<span class="sd">       Increase this number not to end up with unreasonably low lengthscales.</span>
+<span class="sd">    :var max_lengthscale: If lengthscale_bounded = True, this values puts an upper limit on the allowed lengthscale.</span>
+<span class="sd">    :var likelihood_variance_bounded: In case the GPs end up with weird predictions, especially when working with only a</span>
+<span class="sd">       few detected corners, you could try to work with bounds (limits) for the noise allowed on the training points.</span>
+<span class="sd">       In rare cases, the data could also be explained with low lengthscales and high noise levels. This is equivalent</span>
+<span class="sd">       of explaining the data away with noise.</span>
+<span class="sd">    :var min_likelihood_variance: If likelihood_variance_bounded = True, this values puts a lower limit on the allowed</span>
+<span class="sd">       noise. Increase this number, so you don&#39;t end up with unreasonably low noise values.</span>
+<span class="sd">    :var max_likelihood_variance: If likelihood_variance_bounded = True, this values puts an upper limit on the allowed</span>
+<span class="sd">       noise. Increase this number, so you don&#39;t end up with unreasonably high noise values.</span>
+<span class="sd">    :var m_xy_to_u: Stored model for predicting u values.</span>
+<span class="sd">    :var m_xy_to_v: Stored model for predicting v values.</span>
+<span class="sd">    :var scaler: Stored scaler</span>
+<span class="sd">    :var dewarped_res_factor: How many pixels per square width in the dewarped image.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="CheckerboardEnhancer.__init__"><a class="viewcode-back" href="../../../_autosummary/PyCBD.checkerboard_enhancement.checkerboard_enhancer.CheckerboardEnhancer.html#PyCBD.checkerboard_enhancement.checkerboard_enhancer.CheckerboardEnhancer.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Class constructor.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_iterations</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">12</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_expansion_factor</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_dist_factor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.25</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">must_plot_GP_stuff</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">must_plot_iterations</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_nr_of_iters</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">25000</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;lbfgs&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_restarts</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lengthscale_bounded</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">min_lengthscale</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_lengthscale</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">25</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">likelihood_variance_bounded</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">min_likelihood_variance</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_likelihood_variance</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">m_xy_to_u</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">m_xy_to_v</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scaler</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dewarped_res_factor</span> <span class="o">=</span> <span class="mi">50</span></div>
+
+<div class="viewcode-block" id="CheckerboardEnhancer.fit_and_expand_board"><a class="viewcode-back" href="../../../_autosummary/PyCBD.checkerboard_enhancement.checkerboard_enhancer.CheckerboardEnhancer.html#PyCBD.checkerboard_enhancement.checkerboard_enhancer.CheckerboardEnhancer.fit_and_expand_board">[docs]</a>    <span class="k">def</span> <span class="nf">fit_and_expand_board</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span> <span class="n">board_uv</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span> <span class="n">board_xy</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
+                             <span class="n">corners_uv</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span> <span class="n">board_shape</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Train a model based on corner inputs and use this model to predict all corners in the checkerboard.</span>
+
+<span class="sd">        Two Gaussian processes are used for this. One to map the local xy-coordinates to the u-coordinates of the</span>
+<span class="sd">        corners in the image. Another one to map the local xy-coordinates to the v-coordinates of the corners in the</span>
+<span class="sd">        image. We iteratively expand the grid in local xy-space to try and find corners in the image that are not</span>
+<span class="sd">        allocated to a point in the checkerboard grid yet.</span>
+
+<span class="sd">        :param image: Image containing the checkerboard (used for plotting intermediate results).</span>
+<span class="sd">        :param board_uv: Image corner coordinates (u, v)</span>
+<span class="sd">        :param board_xy: Local corner coordinates (x, y)</span>
+<span class="sd">        :param corners_uv: Coordinates (u, v) of all detected corners, including those that have not been assigned to a</span>
+<span class="sd">           checkerboard.</span>
+<span class="sd">        :param board_shape: The shape (rows, cols) of the checkerboard inner corners. This can be used to prevent the</span>
+<span class="sd">           method from trying to expand the checkerboard further in the x/y direction when all columns/rows have already</span>
+<span class="sd">           been found.</span>
+<span class="sd">        :returns: board_uv, the corner image coordinates, and board_xy, their local coordinates.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">current_iteration</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">expansion_factor</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># expand the current board by this many squares in north, east, south and west direction</span>
+        <span class="k">if</span> <span class="n">board_shape</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">n_rows</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">board_xy</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">size</span>
+            <span class="n">n_cols</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">board_xy</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">size</span>
+            <span class="n">expand_vertical</span> <span class="o">=</span> <span class="n">n_rows</span> <span class="o">&lt;</span> <span class="n">board_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">expand_horizontal</span> <span class="o">=</span> <span class="n">n_cols</span> <span class="o">&lt;</span> <span class="n">board_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">expand_horizontal</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">expand_vertical</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">while</span> <span class="n">current_iteration</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_iterations</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Starting iteration: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">current_iteration</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Nr of training points: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">board_xy</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+
+            <span class="n">m_xy_to_u</span><span class="p">,</span> <span class="n">m_xy_to_v</span><span class="p">,</span> <span class="n">scaler</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_train_checkerboard</span><span class="p">(</span><span class="n">board_uv</span><span class="p">,</span> <span class="n">board_xy</span><span class="p">)</span>
+
+            <span class="c1"># Expand board_xy by expansion_factor</span>
+            <span class="n">new_board_xy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_expand_board_xy</span><span class="p">(</span><span class="n">board_xy</span><span class="p">,</span> <span class="n">expansion_factor</span><span class="p">,</span> <span class="n">expand_horizontal</span><span class="p">,</span> <span class="n">expand_vertical</span><span class="p">)</span>
+
+            <span class="c1"># Use map to find more corners</span>
+            <span class="n">new_board_xy_scaled</span> <span class="o">=</span> <span class="n">scaler</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">new_board_xy</span><span class="p">)</span>
+            <span class="n">mean_u_new</span><span class="p">,</span> <span class="n">cov_u_new</span> <span class="o">=</span> <span class="n">m_xy_to_u</span><span class="o">.</span><span class="n">predict_noiseless</span><span class="p">(</span><span class="n">new_board_xy_scaled</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">mean_v_new</span><span class="p">,</span> <span class="n">cov_v_new</span> <span class="o">=</span> <span class="n">m_xy_to_v</span><span class="o">.</span><span class="n">predict_noiseless</span><span class="p">(</span><span class="n">new_board_xy_scaled</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+            <span class="c1"># Remove all predicted points that are not inside the image</span>
+            <span class="n">limits_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">((</span><span class="n">mean_u_new</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">mean_u_new</span> <span class="o">&gt;</span> <span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">|</span> <span class="p">(</span><span class="n">mean_v_new</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">mean_v_new</span> <span class="o">&gt;</span> <span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+            <span class="k">if</span> <span class="n">limits_mask</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+                <span class="n">mean_u_new</span> <span class="o">=</span> <span class="n">mean_u_new</span><span class="p">[</span><span class="o">~</span><span class="n">limits_mask</span><span class="p">]</span>
+                <span class="n">cov_u_new</span> <span class="o">=</span> <span class="n">cov_u_new</span><span class="p">[</span><span class="o">~</span><span class="n">limits_mask</span><span class="p">]</span>
+                <span class="n">mean_v_new</span> <span class="o">=</span> <span class="n">mean_v_new</span><span class="p">[</span><span class="o">~</span><span class="n">limits_mask</span><span class="p">]</span>
+                <span class="n">cov_v_new</span> <span class="o">=</span> <span class="n">cov_v_new</span><span class="p">[</span><span class="o">~</span><span class="n">limits_mask</span><span class="p">]</span>
+                <span class="n">new_board_xy</span> <span class="o">=</span> <span class="n">new_board_xy</span><span class="p">[</span><span class="o">~</span><span class="n">limits_mask</span><span class="p">]</span>
+                <span class="n">new_board_xy_scaled</span> <span class="o">=</span> <span class="n">new_board_xy_scaled</span><span class="p">[</span><span class="o">~</span><span class="n">limits_mask</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">new_board_xy</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;All new points are outside of the image, stop iterating&quot;</span><span class="p">)</span>
+                <span class="k">break</span>
+
+            <span class="n">new_board_uv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">mean_u_new</span><span class="p">,</span> <span class="n">mean_v_new</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">must_plot_GP_stuff</span><span class="p">:</span>
+                <span class="n">expand_grid_factor</span> <span class="o">=</span> <span class="mi">2</span>  <span class="c1"># this determines the grid size for the plots, purely cosmetics</span>
+                <span class="n">min_local_x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">board_xy</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span> <span class="o">-</span> <span class="n">expand_grid_factor</span>
+                <span class="n">max_local_x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">board_xy</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="n">expand_grid_factor</span>
+                <span class="n">min_local_y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">board_xy</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span> <span class="o">-</span> <span class="n">expand_grid_factor</span>
+                <span class="n">max_local_y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">board_xy</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span> <span class="o">+</span> <span class="n">expand_grid_factor</span>
+                <span class="p">[</span><span class="n">Xi</span><span class="p">,</span> <span class="n">Yj</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">min_local_x</span><span class="p">,</span> <span class="n">max_local_x</span><span class="p">,</span> <span class="mi">50</span><span class="p">),</span>
+                                       <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">min_local_y</span><span class="p">,</span> <span class="n">max_local_y</span><span class="p">,</span> <span class="mi">50</span><span class="p">))</span>
+                <span class="n">xy_test</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">Xi</span><span class="o">.</span><span class="n">ravel</span><span class="p">(),</span> <span class="n">Yj</span><span class="o">.</span><span class="n">ravel</span><span class="p">()))</span><span class="o">.</span><span class="n">T</span>
+                <span class="n">xy_test_scaled</span> <span class="o">=</span> <span class="n">scaler</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">xy_test</span><span class="p">)</span>
+                <span class="n">mean_u</span><span class="p">,</span> <span class="n">cov_u</span> <span class="o">=</span> <span class="n">m_xy_to_u</span><span class="o">.</span><span class="n">predict_noiseless</span><span class="p">(</span><span class="n">xy_test_scaled</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="n">mean_v</span><span class="p">,</span> <span class="n">cov_v</span> <span class="o">=</span> <span class="n">m_xy_to_v</span><span class="o">.</span><span class="n">predict_noiseless</span><span class="p">(</span><span class="n">xy_test_scaled</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+                <span class="n">nr_of_levels</span> <span class="o">=</span> <span class="mi">20</span>
+                <span class="n">levels_u</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">mean_u</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">mean_u</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">num</span><span class="o">=</span><span class="n">nr_of_levels</span><span class="p">)</span>
+                <span class="n">levels_v</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">mean_v</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">mean_v</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">num</span><span class="o">=</span><span class="n">nr_of_levels</span><span class="p">)</span>
+
+                <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">121</span><span class="p">)</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">contour</span><span class="p">(</span><span class="n">Xi</span><span class="p">,</span> <span class="n">Yj</span><span class="p">,</span> <span class="n">mean_u</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">Xi</span><span class="o">.</span><span class="n">shape</span><span class="p">),</span> <span class="n">levels_u</span><span class="p">)</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">board_xy</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">board_xy</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;ro&#39;</span><span class="p">),</span> <span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">&quot;square&quot;</span><span class="p">)</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">new_board_xy</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">new_board_xy</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;go&#39;</span><span class="p">),</span> <span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">&quot;square&quot;</span><span class="p">)</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;local x&quot;</span><span class="p">),</span> <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;local y&quot;</span><span class="p">)</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Mean of GP fit for U&quot;</span><span class="p">),</span> <span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">()</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">122</span><span class="p">)</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">pcolor</span><span class="p">(</span><span class="n">Xi</span><span class="p">,</span> <span class="n">Yj</span><span class="p">,</span> <span class="n">cov_u</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">Xi</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">board_xy</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">board_xy</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;ro&#39;</span><span class="p">),</span> <span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">&quot;square&quot;</span><span class="p">)</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">new_board_xy</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">new_board_xy</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;go&#39;</span><span class="p">),</span> <span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">&quot;square&quot;</span><span class="p">)</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;local x&quot;</span><span class="p">),</span> <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;local y&quot;</span><span class="p">)</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Variance of GP fit for U&quot;</span><span class="p">),</span> <span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">()</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+                <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">121</span><span class="p">)</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">contour</span><span class="p">(</span><span class="n">Xi</span><span class="p">,</span> <span class="n">Yj</span><span class="p">,</span> <span class="n">mean_v</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">Xi</span><span class="o">.</span><span class="n">shape</span><span class="p">),</span> <span class="n">levels_v</span><span class="p">)</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">board_xy</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">board_xy</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;ro&#39;</span><span class="p">),</span> <span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">&quot;square&quot;</span><span class="p">)</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">new_board_xy</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">new_board_xy</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;go&#39;</span><span class="p">),</span> <span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">&quot;square&quot;</span><span class="p">)</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;local x&quot;</span><span class="p">),</span> <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;local y&quot;</span><span class="p">)</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Mean of GP fit for V&quot;</span><span class="p">),</span> <span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">()</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">122</span><span class="p">)</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">pcolor</span><span class="p">(</span><span class="n">Xi</span><span class="p">,</span> <span class="n">Yj</span><span class="p">,</span> <span class="n">cov_v</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">Xi</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">board_xy</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">board_xy</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;ro&#39;</span><span class="p">),</span> <span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">&quot;square&quot;</span><span class="p">)</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">new_board_xy</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">new_board_xy</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;go&#39;</span><span class="p">),</span> <span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">&quot;square&quot;</span><span class="p">)</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;local x&quot;</span><span class="p">),</span> <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;local y&quot;</span><span class="p">)</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Variance of GP fit for V&quot;</span><span class="p">),</span> <span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">()</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+            <span class="c1"># Find a match between predicted and detected corners</span>
+            <span class="n">max_dist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_dist_factor</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">board_uv</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:]</span> <span class="o">-</span> <span class="n">board_uv</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="p">:])</span>
+            <span class="n">distances</span> <span class="o">=</span> <span class="n">cdist</span><span class="p">(</span><span class="n">new_board_uv</span><span class="p">,</span> <span class="n">corners_uv</span><span class="p">,</span> <span class="s1">&#39;euclidean&#39;</span><span class="p">)</span>
+            <span class="n">minimum_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">distances</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">selection_mask</span> <span class="o">=</span> <span class="n">distances</span><span class="p">[</span><span class="n">minimum_indices</span><span class="p">,</span> <span class="nb">range</span><span class="p">(</span><span class="n">minimum_indices</span><span class="o">.</span><span class="n">size</span><span class="p">)]</span> <span class="o">&lt;=</span> <span class="n">max_dist</span>
+            <span class="n">nr_of_points_found</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">selection_mask</span><span class="p">)</span>
+            <span class="n">board_uv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">board_uv</span><span class="p">,</span> <span class="n">corners_uv</span><span class="p">[</span><span class="n">selection_mask</span><span class="p">,</span> <span class="p">:]),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">board_xy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">board_xy</span><span class="p">,</span> <span class="n">new_board_xy</span><span class="p">[</span><span class="n">minimum_indices</span><span class="p">[</span><span class="n">selection_mask</span><span class="p">],</span> <span class="p">:]),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">corners_uv</span> <span class="o">=</span> <span class="n">corners_uv</span><span class="p">[</span><span class="o">~</span><span class="n">selection_mask</span><span class="p">,</span> <span class="p">:]</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">must_plot_iterations</span><span class="p">:</span>
+                <span class="c1"># Plot final result of this iteration</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                    <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">cv2</span><span class="o">.</span><span class="n">cvtColor</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">cv2</span><span class="o">.</span><span class="n">COLOR_BGR2RGB</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;gray&#39;</span><span class="p">)</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">corners_uv</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">corners_uv</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;bo&#39;</span><span class="p">,</span> <span class="n">markeredgecolor</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">)</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">mean_u_new</span><span class="p">,</span> <span class="n">mean_v_new</span><span class="p">,</span> <span class="s1">&#39;go&#39;</span><span class="p">,</span> <span class="n">markeredgecolor</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">)</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">board_uv</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">board_uv</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;ro&#39;</span><span class="p">,</span> <span class="n">markeredgecolor</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">)</span>
+                <span class="n">title</span> <span class="o">=</span> <span class="s2">&quot;Enhancer: After iteration &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">current_iteration</span><span class="p">)</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s1">&#39;off&#39;</span><span class="p">)</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+            <span class="c1"># Stop if all points are accounted for</span>
+            <span class="k">if</span> <span class="n">corners_uv</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">break</span>
+
+            <span class="k">if</span> <span class="n">nr_of_points_found</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">expansion_factor</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_expansion_factor</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;No new points added and exceeded max_expansion_factor&quot;</span><span class="p">)</span>
+                    <span class="k">break</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;No new points added, increasing expansion factor&quot;</span><span class="p">)</span>
+                <span class="n">expansion_factor</span> <span class="o">=</span> <span class="n">expansion_factor</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">expansion_factor</span> <span class="o">=</span> <span class="mi">1</span>
+
+            <span class="c1"># Stop if the board shape has been found</span>
+            <span class="k">if</span> <span class="n">board_shape</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">n_rows</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">board_xy</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">size</span>
+                <span class="n">n_cols</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">board_xy</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">size</span>
+                <span class="n">expand_vertical</span> <span class="o">=</span> <span class="n">n_rows</span> <span class="o">+</span> <span class="n">expansion_factor</span> <span class="o">&lt;=</span> <span class="n">board_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">expand_horizontal</span> <span class="o">=</span> <span class="n">n_cols</span> <span class="o">+</span> <span class="n">expansion_factor</span> <span class="o">&lt;=</span> <span class="n">board_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">expand_vertical</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">expand_horizontal</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Found board with specified dimensions.&quot;</span><span class="p">)</span>
+                    <span class="k">break</span>
+
+            <span class="n">current_iteration</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">board_uv</span><span class="p">,</span> <span class="n">board_xy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reset_origin_and_order</span><span class="p">(</span><span class="n">board_uv</span><span class="p">,</span> <span class="n">board_xy</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">board_uv</span><span class="p">,</span> <span class="n">board_xy</span></div>
+
+<div class="viewcode-block" id="CheckerboardEnhancer.fit_and_predict_board"><a class="viewcode-back" href="../../../_autosummary/PyCBD.checkerboard_enhancement.checkerboard_enhancer.CheckerboardEnhancer.html#PyCBD.checkerboard_enhancement.checkerboard_enhancer.CheckerboardEnhancer.fit_and_predict_board">[docs]</a>    <span class="k">def</span> <span class="nf">fit_and_predict_board</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span> <span class="n">board_uv</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span> <span class="n">board_xy</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
+                              <span class="n">out_of_image</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Train a model based on corner inputs and use this model to predict all corners in the checkerboard.</span>
+
+<span class="sd">        This function is used after the final iteration in function fit_and_expand_board. It is assumed that all</span>
+<span class="sd">        detected corner are allocated to point in the checkerboard grid. This means no loose detected corners and also</span>
+<span class="sd">        false positives (detected corners that are not part of the checkerboard grid) are removed. Now we train the GPs</span>
+<span class="sd">        one final time on all corners. We fill in the positions in xy-space where no corner was detected, e.g.</span>
+<span class="sd">        occlusions. Once this model is trained, we can use it to predict points (pixel uv-coordinates) in the image for</span>
+<span class="sd">        all corners. This fills up any occlusions and smooths out the board, removing jitter from the detected corners.</span>
+
+<span class="sd">        :param image: The image containing the checkerboard (used for determining image limits).</span>
+<span class="sd">        :param board_uv: Image corner coordinates (u, v).</span>
+<span class="sd">        :param board_xy: Local corner coordinates (x, y).</span>
+<span class="sd">        :param out_of_image: Whether to include predicted points beyond the limits of the image.</span>
+<span class="sd">        :returns: board_uv_predicted_grid, the predicted corner image coordinates, and board_xy_predicted_grid, their</span>
+<span class="sd">           local coordinates.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">m_xy_to_u</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">m_xy_to_v</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">scaler</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_train_checkerboard</span><span class="p">(</span><span class="n">board_uv</span><span class="p">,</span> <span class="n">board_xy</span><span class="p">)</span>
+
+        <span class="n">min_local_x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">board_xy</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span>
+        <span class="n">max_local_x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">board_xy</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span>
+        <span class="n">min_local_y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">board_xy</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span>
+        <span class="n">max_local_y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">board_xy</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span>
+        <span class="n">cols</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">max_local_x</span> <span class="o">-</span> <span class="n">min_local_x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">rows</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">max_local_y</span> <span class="o">-</span> <span class="n">min_local_y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="p">[</span><span class="n">Xi</span><span class="p">,</span> <span class="n">Yj</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">min_local_x</span><span class="p">,</span> <span class="n">max_local_x</span><span class="p">,</span> <span class="n">cols</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">min_local_y</span><span class="p">,</span> <span class="n">max_local_y</span><span class="p">,</span> <span class="n">rows</span><span class="p">))</span>
+        <span class="n">board_xy_predicted_grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">Xi</span><span class="o">.</span><span class="n">ravel</span><span class="p">(),</span> <span class="n">Yj</span><span class="o">.</span><span class="n">ravel</span><span class="p">()))</span><span class="o">.</span><span class="n">T</span>
+        <span class="n">board_xy_predicted_grid_scaled</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scaler</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">board_xy_predicted_grid</span><span class="p">)</span>
+
+        <span class="c1"># Use GP to predict for entire grid</span>
+        <span class="n">mean_u</span><span class="p">,</span> <span class="n">cov_u</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">m_xy_to_u</span><span class="o">.</span><span class="n">predict_noiseless</span><span class="p">(</span><span class="n">board_xy_predicted_grid_scaled</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">mean_v</span><span class="p">,</span> <span class="n">cov_v</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">m_xy_to_v</span><span class="o">.</span><span class="n">predict_noiseless</span><span class="p">(</span><span class="n">board_xy_predicted_grid_scaled</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">board_uv_predicted_grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">mean_u</span><span class="p">,</span> <span class="n">mean_v</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">board_uv_predicted_grid_uncertainty</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">cov_u</span><span class="p">,</span> <span class="n">cov_v</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># use this as a quality label</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">must_plot_GP_stuff</span><span class="p">:</span>
+            <span class="n">expand_grid_factor</span> <span class="o">=</span> <span class="mi">2</span>  <span class="c1"># this determines the grid size for the plots, purely cosmetics</span>
+            <span class="n">min_local_x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">board_xy_predicted_grid</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span> <span class="o">-</span> <span class="n">expand_grid_factor</span>
+            <span class="n">max_local_x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">board_xy_predicted_grid</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="n">expand_grid_factor</span>
+            <span class="n">min_local_y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">board_xy_predicted_grid</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span> <span class="o">-</span> <span class="n">expand_grid_factor</span>
+            <span class="n">max_local_y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">board_xy_predicted_grid</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span> <span class="o">+</span> <span class="n">expand_grid_factor</span>
+            <span class="p">[</span><span class="n">Xi</span><span class="p">,</span> <span class="n">Yj</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">min_local_x</span><span class="p">,</span> <span class="n">max_local_x</span><span class="p">,</span> <span class="mi">50</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">min_local_y</span><span class="p">,</span> <span class="n">max_local_y</span><span class="p">,</span> <span class="mi">50</span><span class="p">))</span>
+            <span class="n">xy_test</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">Xi</span><span class="o">.</span><span class="n">ravel</span><span class="p">(),</span> <span class="n">Yj</span><span class="o">.</span><span class="n">ravel</span><span class="p">()))</span><span class="o">.</span><span class="n">T</span>
+            <span class="n">xy_test_scaled</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scaler</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">xy_test</span><span class="p">)</span>
+            <span class="n">mean_u</span><span class="p">,</span> <span class="n">cov_u</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">m_xy_to_u</span><span class="o">.</span><span class="n">predict_noiseless</span><span class="p">(</span><span class="n">xy_test_scaled</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">mean_v</span><span class="p">,</span> <span class="n">cov_v</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">m_xy_to_v</span><span class="o">.</span><span class="n">predict_noiseless</span><span class="p">(</span><span class="n">xy_test_scaled</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+            <span class="n">nr_of_levels</span> <span class="o">=</span> <span class="mi">20</span>
+            <span class="n">levels_u</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">mean_u</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">mean_u</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">num</span><span class="o">=</span><span class="n">nr_of_levels</span><span class="p">)</span>
+            <span class="n">levels_v</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">mean_v</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">mean_v</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">num</span><span class="o">=</span><span class="n">nr_of_levels</span><span class="p">)</span>
+
+            <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">121</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">contour</span><span class="p">(</span><span class="n">Xi</span><span class="p">,</span> <span class="n">Yj</span><span class="p">,</span> <span class="n">mean_u</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">Xi</span><span class="o">.</span><span class="n">shape</span><span class="p">),</span> <span class="n">levels_u</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">board_xy_predicted_grid</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">board_xy_predicted_grid</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;ro&#39;</span><span class="p">),</span> <span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">&quot;square&quot;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;local x&quot;</span><span class="p">),</span> <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;local y&quot;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Mean of GP fit for U&quot;</span><span class="p">),</span> <span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">()</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">122</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">pcolor</span><span class="p">(</span><span class="n">Xi</span><span class="p">,</span> <span class="n">Yj</span><span class="p">,</span> <span class="n">cov_u</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">Xi</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">board_xy_predicted_grid</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">board_xy_predicted_grid</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;ro&#39;</span><span class="p">),</span> <span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">&quot;square&quot;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;local x&quot;</span><span class="p">),</span> <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;local y&quot;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Variance of GP fit for U&quot;</span><span class="p">),</span> <span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">()</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+            <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">121</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">contour</span><span class="p">(</span><span class="n">Xi</span><span class="p">,</span> <span class="n">Yj</span><span class="p">,</span> <span class="n">mean_v</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">Xi</span><span class="o">.</span><span class="n">shape</span><span class="p">),</span> <span class="n">levels_v</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">board_xy_predicted_grid</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">board_xy_predicted_grid</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;ro&#39;</span><span class="p">),</span> <span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">&quot;square&quot;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;local x&quot;</span><span class="p">),</span> <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;local y&quot;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Mean of GP fit for V&quot;</span><span class="p">),</span> <span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">()</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">122</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">pcolor</span><span class="p">(</span><span class="n">Xi</span><span class="p">,</span> <span class="n">Yj</span><span class="p">,</span> <span class="n">cov_v</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">Xi</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">board_xy_predicted_grid</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">board_xy_predicted_grid</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;ro&#39;</span><span class="p">),</span> <span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">&quot;square&quot;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;local x&quot;</span><span class="p">),</span> <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;local y&quot;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Variance of GP fit for V&quot;</span><span class="p">),</span> <span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">()</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+        <span class="c1"># Remove point that fall beyond the image limits if desired.</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">out_of_image</span><span class="p">:</span>
+            <span class="n">limits_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">((</span><span class="n">board_uv_predicted_grid</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">|</span>
+                                     <span class="p">(</span><span class="n">board_uv_predicted_grid</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">|</span>
+                                     <span class="p">(</span><span class="n">board_uv_predicted_grid</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">|</span>
+                                     <span class="p">(</span><span class="n">board_uv_predicted_grid</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+            <span class="k">if</span> <span class="n">limits_mask</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+                <span class="n">board_uv_predicted_grid</span> <span class="o">=</span> <span class="n">board_uv_predicted_grid</span><span class="p">[</span><span class="o">~</span><span class="n">limits_mask</span><span class="p">,</span> <span class="p">:]</span>
+                <span class="n">board_xy_predicted_grid</span> <span class="o">=</span> <span class="n">board_xy_predicted_grid</span><span class="p">[</span><span class="o">~</span><span class="n">limits_mask</span><span class="p">,</span> <span class="p">:]</span>
+
+        <span class="n">board_uv_predicted_grid</span><span class="p">,</span> <span class="n">board_xy_predicted_grid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reset_origin_and_order</span><span class="p">(</span><span class="n">board_uv_predicted_grid</span><span class="p">,</span>
+                                                                                        <span class="n">board_xy_predicted_grid</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">board_uv_predicted_grid</span><span class="p">,</span> <span class="n">board_xy_predicted_grid</span></div>
+
+<div class="viewcode-block" id="CheckerboardEnhancer.dewarp_image"><a class="viewcode-back" href="../../../_autosummary/PyCBD.checkerboard_enhancement.checkerboard_enhancer.CheckerboardEnhancer.html#PyCBD.checkerboard_enhancement.checkerboard_enhancer.CheckerboardEnhancer.dewarp_image">[docs]</a>    <span class="k">def</span> <span class="nf">dewarp_image</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span> <span class="n">board_uv</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span> <span class="n">board_xy</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
+                     <span class="n">use_stored</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Remove lens and perspective distortion from the image.</span>
+
+<span class="sd">        This method can either be performed separately, in which case new Gaussian processes need to be fitted to the</span>
+<span class="sd">        checkerboard, or after using :py:meth:`.fit_and_predict_board`, where the stored Gaussian</span>
+<span class="sd">        processes can be used instead.</span>
+
+<span class="sd">        :param image: Original image that needs to be dewarped.</span>
+<span class="sd">        :param board_uv: Image corner coordinates (u, v).</span>
+<span class="sd">        :param board_xy: Local corner coordinates (x, y).</span>
+<span class="sd">        :param use_stored: Whether to reuse the stored Gaussian processes or fit new ones.</span>
+<span class="sd">        :returns: The dewarped image.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">use_stored</span> <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">m_xy_to_u</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">m_xy_to_v</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">m_xy_to_u</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">m_xy_to_v</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">scaler</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_train_checkerboard</span><span class="p">(</span><span class="n">board_uv</span><span class="p">,</span> <span class="n">board_xy</span><span class="p">)</span>
+
+        <span class="n">min_local_x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">board_xy</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span>
+        <span class="n">max_local_x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">board_xy</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span>
+        <span class="n">min_local_y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">board_xy</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span>
+        <span class="n">max_local_y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">board_xy</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span>
+        <span class="n">nr_of_cols</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">max_local_x</span> <span class="o">-</span> <span class="n">min_local_x</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">nr_of_rows</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">max_local_y</span> <span class="o">-</span> <span class="n">min_local_y</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">res_u</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dewarped_res_factor</span> <span class="o">*</span> <span class="n">nr_of_cols</span>
+        <span class="n">res_v</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dewarped_res_factor</span> <span class="o">*</span> <span class="n">nr_of_rows</span>
+        <span class="n">dewarped_image</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">res_v</span><span class="p">,</span> <span class="n">res_u</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+
+        <span class="n">min_local_x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">board_xy</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span>
+        <span class="n">max_local_x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">board_xy</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span>
+        <span class="n">min_local_y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">board_xy</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span>
+        <span class="n">max_local_y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">board_xy</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span>
+
+        <span class="n">xs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">min_local_x</span><span class="p">,</span> <span class="n">max_local_x</span><span class="p">,</span> <span class="n">res_u</span><span class="p">)</span>
+        <span class="n">ys</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">min_local_y</span><span class="p">,</span> <span class="n">max_local_y</span><span class="p">,</span> <span class="n">res_v</span><span class="p">)</span>
+
+        <span class="p">[</span><span class="n">xi</span><span class="p">,</span> <span class="n">yj</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">xs</span><span class="p">,</span> <span class="n">ys</span><span class="p">)</span>
+        <span class="n">xy_test</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">xi</span><span class="o">.</span><span class="n">ravel</span><span class="p">(),</span> <span class="n">yj</span><span class="o">.</span><span class="n">ravel</span><span class="p">()))</span><span class="o">.</span><span class="n">T</span>
+        <span class="n">xy_test_scaled</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scaler</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">xy_test</span><span class="p">)</span>
+        <span class="n">mean_u</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">m_xy_to_u</span><span class="o">.</span><span class="n">predict_noiseless</span><span class="p">(</span><span class="n">xy_test_scaled</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">mean_v</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">m_xy_to_v</span><span class="o">.</span><span class="n">predict_noiseless</span><span class="p">(</span><span class="n">xy_test_scaled</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="n">UVForEntireGridAndAllInBetween</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">mean_u</span><span class="p">,</span> <span class="n">mean_v</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">cnt</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">res_v</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">res_u</span><span class="p">):</span>
+                <span class="n">new_UV</span> <span class="o">=</span> <span class="n">UVForEntireGridAndAllInBetween</span><span class="p">[</span><span class="n">cnt</span><span class="p">,</span> <span class="p">:]</span>
+                <span class="n">u</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">new_UV</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">v</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">new_UV</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">u</span> <span class="o">&lt;</span> <span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">and</span> <span class="n">v</span> <span class="o">&lt;</span> <span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">and</span> <span class="n">u</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">v</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">new_pixel_value</span> <span class="o">=</span> <span class="n">image</span><span class="p">[</span><span class="n">v</span><span class="p">,</span> <span class="n">u</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">new_pixel_value</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="n">dewarped_image</span><span class="p">[</span><span class="n">res_v</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">j</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_pixel_value</span>
+                <span class="n">cnt</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">return</span> <span class="n">dewarped_image</span></div>
+
+    <span class="k">def</span> <span class="nf">_train_gp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">board_xy_scaled</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span> <span class="n">training_image_axis</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Train model for a single image coordinate axis.&quot;&quot;&quot;</span>
+        <span class="n">k_xy_to_image_axis</span> <span class="o">=</span> <span class="n">GPy</span><span class="o">.</span><span class="n">kern</span><span class="o">.</span><span class="n">RBF</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="n">m_xy_to_image_axis</span> <span class="o">=</span> <span class="n">GPy</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPRegression</span><span class="p">(</span><span class="n">board_xy_scaled</span><span class="p">,</span> <span class="n">training_image_axis</span><span class="p">,</span> <span class="n">k_xy_to_image_axis</span><span class="p">,</span>
+                                                     <span class="n">normalizer</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">m_xy_to_image_axis</span><span class="o">.</span><span class="n">kern</span><span class="o">.</span><span class="n">lengthscale</span> <span class="o">=</span> <span class="mi">10</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">likelihood_variance_bounded</span><span class="p">:</span>
+            <span class="n">m_xy_to_image_axis</span><span class="o">.</span><span class="n">likelihood</span><span class="o">.</span><span class="n">variance</span><span class="o">.</span><span class="n">constrain_bounded</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">min_likelihood_variance</span><span class="p">,</span>
+                                                                     <span class="bp">self</span><span class="o">.</span><span class="n">max_likelihood_variance</span><span class="p">)</span>
+            <span class="n">m_xy_to_image_axis</span><span class="o">.</span><span class="n">likelihood</span><span class="o">.</span><span class="n">variance</span><span class="o">.</span><span class="n">fix</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lengthscale_bounded</span><span class="p">:</span>
+            <span class="n">m_xy_to_image_axis</span><span class="o">.</span><span class="n">rbf</span><span class="o">.</span><span class="n">lengthscale</span><span class="o">.</span><span class="n">constrain_bounded</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">min_lengthscale</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_lengthscale</span><span class="p">)</span>
+        <span class="n">m_xy_to_image_axis</span><span class="o">.</span><span class="n">optimize_restarts</span><span class="p">(</span><span class="n">messages</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">num_restarts</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_restarts</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                             <span class="n">max_iters</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">max_nr_of_iters</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">m_xy_to_image_axis</span>
+
+    <span class="k">def</span> <span class="nf">_train_checkerboard</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">board_uv</span><span class="p">,</span> <span class="n">board_xy</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Train models for entire checkerboard.&quot;&quot;&quot;</span>
+        <span class="n">scaler</span> <span class="o">=</span> <span class="n">StandardScaler</span><span class="p">()</span>
+        <span class="n">scaler</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">board_xy</span><span class="p">)</span>
+        <span class="n">board_xy_scaled</span> <span class="o">=</span> <span class="n">scaler</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">board_xy</span><span class="p">)</span>
+
+        <span class="c1"># Find map between board_xy and board_uv, i.e. training GPs</span>
+        <span class="n">training_us</span> <span class="o">=</span> <span class="n">board_uv</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">training_us</span> <span class="o">=</span> <span class="n">training_us</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
+        <span class="n">m_xy_to_u</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_train_gp</span><span class="p">(</span><span class="n">board_xy_scaled</span><span class="p">,</span> <span class="n">training_us</span><span class="p">)</span>
+
+        <span class="n">training_vs</span> <span class="o">=</span> <span class="n">board_uv</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">training_vs</span> <span class="o">=</span> <span class="n">training_vs</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span>
+        <span class="n">m_xy_to_v</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_train_gp</span><span class="p">(</span><span class="n">board_xy_scaled</span><span class="p">,</span> <span class="n">training_vs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">m_xy_to_u</span><span class="p">,</span> <span class="n">m_xy_to_v</span><span class="p">,</span> <span class="n">scaler</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_expand_board_xy</span><span class="p">(</span><span class="n">board_xy</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span> <span class="n">expansion_factor</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">horizontal</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">vertical</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Expand local coordinate array with additional rows and columns of local coordinates.&quot;&quot;&quot;</span>
+        <span class="c1"># new min max values</span>
+        <span class="k">if</span> <span class="n">horizontal</span><span class="p">:</span>
+            <span class="n">min_x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">board_xy</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span> <span class="o">-</span> <span class="n">expansion_factor</span>
+            <span class="n">max_x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">board_xy</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="n">expansion_factor</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">min_x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">board_xy</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span>
+            <span class="n">max_x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">board_xy</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">vertical</span><span class="p">:</span>
+            <span class="n">min_y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">board_xy</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span> <span class="o">-</span> <span class="n">expansion_factor</span>
+            <span class="n">max_y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">board_xy</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span> <span class="o">+</span> <span class="n">expansion_factor</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">min_y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">board_xy</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span>
+            <span class="n">max_y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">board_xy</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span>
+
+        <span class="n">x_positions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">min_x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">max_x</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">y_positions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">min_y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">max_y</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">north</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x_positions</span><span class="p">,</span> <span class="p">[</span><span class="n">max_y</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">x_positions</span><span class="p">)]))</span>
+        <span class="n">south</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x_positions</span><span class="p">,</span> <span class="p">[</span><span class="n">min_y</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">x_positions</span><span class="p">)]))</span>
+        <span class="n">east</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">max_x</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">y_positions</span><span class="p">),</span> <span class="n">y_positions</span><span class="p">]))</span>
+        <span class="n">west</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">min_x</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">y_positions</span><span class="p">),</span> <span class="n">y_positions</span><span class="p">]))</span>
+        <span class="n">corners</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">min_x</span><span class="p">,</span> <span class="n">min_x</span><span class="p">,</span> <span class="n">max_x</span><span class="p">,</span> <span class="n">max_x</span><span class="p">],</span> <span class="p">[</span><span class="n">min_y</span><span class="p">,</span> <span class="n">max_y</span><span class="p">,</span> <span class="n">min_y</span><span class="p">,</span> <span class="n">max_y</span><span class="p">]]))</span>
+
+        <span class="k">if</span> <span class="n">horizontal</span> <span class="ow">and</span> <span class="n">vertical</span><span class="p">:</span>
+            <span class="n">new_board_xy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">north</span><span class="p">,</span> <span class="n">south</span><span class="p">,</span> <span class="n">east</span><span class="p">,</span> <span class="n">west</span><span class="p">,</span> <span class="n">corners</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">horizontal</span><span class="p">:</span>
+            <span class="n">new_board_xy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">east</span><span class="p">,</span> <span class="n">west</span><span class="p">,</span> <span class="n">corners</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">new_board_xy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">north</span><span class="p">,</span> <span class="n">south</span><span class="p">,</span> <span class="n">corners</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">new_board_xy</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_reset_origin_and_order</span><span class="p">(</span><span class="n">board_uv</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span> <span class="n">board_xy</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reset the origin of the local coordinate axes and order the corners according to their local position.&quot;&quot;&quot;</span>
+        <span class="n">x_min</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">board_xy</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span>
+        <span class="n">y_min</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">board_xy</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span>
+        <span class="n">board_xy</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">board_xy</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">x_min</span>
+        <span class="n">board_xy</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">board_xy</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">y_min</span>
+
+        <span class="n">ordered_indexes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">lexsort</span><span class="p">((</span><span class="n">board_xy</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">board_xy</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]))</span>
+        <span class="n">board_uv</span> <span class="o">=</span> <span class="n">board_uv</span><span class="p">[</span><span class="n">ordered_indexes</span><span class="p">]</span>
+        <span class="n">board_xy</span> <span class="o">=</span> <span class="n">board_xy</span><span class="p">[</span><span class="n">ordered_indexes</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">board_uv</span><span class="p">,</span> <span class="n">board_xy</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, InViLab.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

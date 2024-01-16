@@ -1,0 +1,31 @@
+PyCBD.checkerboard\_enhancement.checkerboard\_enhancer
+======================================================
+
+.. automodule:: PyCBD.checkerboard_enhancement.checkerboard_enhancer
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+      :toctree:
+      :template: custom-class-template.rst
+   
+      CheckerboardEnhancer
+   
+   
+
+   
+   
+   
+
+
+

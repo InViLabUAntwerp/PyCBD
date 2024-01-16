@@ -1,0 +1,35 @@
+﻿PyCBD
+=====
+
+.. automodule:: PyCBD
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+
+
+.. rubric:: Modules
+
+.. autosummary::
+   :toctree:
+   :template: custom-module-template.rst
+   :recursive:
+
+   PyCBD.checkerboard_detection
+   PyCBD.checkerboard_enhancement
+   PyCBD.logger_configuration
+   PyCBD.pipelines
+

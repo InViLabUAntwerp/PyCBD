@@ -1,0 +1,21 @@
+PyCBD.pipelines.CBDPipeline
+===========================
+
+.. currentmodule:: PyCBD.pipelines
+
+.. autoclass:: CBDPipeline
+   :members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~CBDPipeline.__init__
+      ~CBDPipeline.detect_checkerboard
+      ~CBDPipeline.dewarp_image
+   
+   

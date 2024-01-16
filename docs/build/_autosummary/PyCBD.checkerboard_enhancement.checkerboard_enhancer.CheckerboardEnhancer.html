@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PyCBD.checkerboard_enhancement.checkerboard_enhancer.CheckerboardEnhancer &mdash; PyCBD 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="PyCBD.logger_configuration" href="PyCBD.logger_configuration.html" />
+    <link rel="prev" title="PyCBD.checkerboard_enhancement.checkerboard_enhancer" href="PyCBD.checkerboard_enhancement.checkerboard_enhancer.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            PyCBD
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../readme_link.html">Readme</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="PyCBD.html">PyCBD</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="PyCBD.checkerboard_detection.html">PyCBD.checkerboard_detection</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="PyCBD.checkerboard_enhancement.html">PyCBD.checkerboard_enhancement</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="PyCBD.checkerboard_enhancement.checkerboard_enhancer.html">PyCBD.checkerboard_enhancement.checkerboard_enhancer</a><ul class="current">
+<li class="toctree-l4 current"><a class="current reference internal" href="#">PyCBD.checkerboard_enhancement.checkerboard_enhancer.CheckerboardEnhancer</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="PyCBD.logger_configuration.html">PyCBD.logger_configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="PyCBD.pipelines.html">PyCBD.pipelines</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">PyCBD</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="PyCBD.html">PyCBD</a></li>
+          <li class="breadcrumb-item"><a href="PyCBD.checkerboard_enhancement.html">PyCBD.checkerboard_enhancement</a></li>
+          <li class="breadcrumb-item"><a href="PyCBD.checkerboard_enhancement.checkerboard_enhancer.html">PyCBD.checkerboard_enhancement.checkerboard_enhancer</a></li>
+      <li class="breadcrumb-item active">PyCBD.checkerboard_enhancement.checkerboard_enhancer.CheckerboardEnhancer</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/_autosummary/PyCBD.checkerboard_enhancement.checkerboard_enhancer.CheckerboardEnhancer.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pycbd-checkerboard-enhancement-checkerboard-enhancer-checkerboardenhancer">
+<h1>PyCBD.checkerboard_enhancement.checkerboard_enhancer.CheckerboardEnhancer<a class="headerlink" href="#pycbd-checkerboard-enhancement-checkerboard-enhancer-checkerboardenhancer" title="Permalink to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="PyCBD.checkerboard_enhancement.checkerboard_enhancer.CheckerboardEnhancer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">PyCBD.checkerboard_enhancement.checkerboard_enhancer.</span></span><span class="sig-name descname"><span class="pre">CheckerboardEnhancer</span></span><a class="reference internal" href="../_modules/PyCBD/checkerboard_enhancement/checkerboard_enhancer.html#CheckerboardEnhancer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#PyCBD.checkerboard_enhancement.checkerboard_enhancer.CheckerboardEnhancer" title="Permalink to this definition"></a></dt>
+<dd><p>Class for checkerboard enhancement with Gaussian processes</p>
+<dl class="field-list simple">
+<dt class="field-odd">Variables<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>max_iterations</strong> – Determines the maximum allowed number of times you want to expand the local grid of
+points (in xy-space on the checkerboard itself) and try to find matching detected corners (in the image in
+uv-space).</p></li>
+<li><p><strong>max_expansion_factor</strong> – The maximum amount of times the local grid of points (x, y) can expand in either
+direction without finding matching detected corners (u, v).</p></li>
+<li><p><strong>max_dist_factor</strong> – The GP models predict uv-coordinates for a new corner. The algorithm will try to match
+those predictions to actual detected corners. This distance determines how far a detected corner can deviate from
+a predicted one.</p></li>
+<li><p><strong>must_plot_GP_stuff</strong> – Set this to true if you want to visualize the GP predictions. You only need this in case
+something is obviously wrong.</p></li>
+<li><p><strong>must_plot_iterations</strong> – Set this to true if you want to visualize each step of the algorithm. You only need this
+in case something is obviously wrong.</p></li>
+<li><p><strong>max_nr_of_iters</strong> – Training the GPs means finding an optimal set of hyperparameters. This could in some case take
+a lot of iterations. Lower this number if you want to limit this. In general, you should not have to change this.</p></li>
+<li><p><strong>optimizer</strong> – The optimizer used to train the GPs. In general, you should not have to change this.</p></li>
+<li><p><strong>num_restarts</strong> – The optimizer training the GPS could get stuck in a local optimum, although for well-behaved
+checkerboards, this is rare. In general, you should not have to change this. If the results (log marginal
+likelihood values) do not differ much, then you could get away with setting this to zero (no restarts).</p></li>
+<li><p><strong>lengthscale_bounded</strong> – In case the GPs end up with weird predictions, especially when working with only a few
+detected corners, you could try to work with bounds (limits) for the lengthscale.</p></li>
+<li><p><strong>min_lengthscale</strong> – If lengthscale_bounded = True, this values puts a lower limit on the allowed lengthscale.
+Increase this number not to end up with unreasonably low lengthscales.</p></li>
+<li><p><strong>max_lengthscale</strong> – If lengthscale_bounded = True, this values puts an upper limit on the allowed lengthscale.</p></li>
+<li><p><strong>likelihood_variance_bounded</strong> – In case the GPs end up with weird predictions, especially when working with only a
+few detected corners, you could try to work with bounds (limits) for the noise allowed on the training points.
+In rare cases, the data could also be explained with low lengthscales and high noise levels. This is equivalent
+of explaining the data away with noise.</p></li>
+<li><p><strong>min_likelihood_variance</strong> – If likelihood_variance_bounded = True, this values puts a lower limit on the allowed
+noise. Increase this number, so you don’t end up with unreasonably low noise values.</p></li>
+<li><p><strong>max_likelihood_variance</strong> – If likelihood_variance_bounded = True, this values puts an upper limit on the allowed
+noise. Increase this number, so you don’t end up with unreasonably high noise values.</p></li>
+<li><p><strong>m_xy_to_u</strong> – Stored model for predicting u values.</p></li>
+<li><p><strong>m_xy_to_v</strong> – Stored model for predicting v values.</p></li>
+<li><p><strong>scaler</strong> – Stored scaler</p></li>
+<li><p><strong>dewarped_res_factor</strong> – How many pixels per square width in the dewarped image.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="PyCBD.checkerboard_enhancement.checkerboard_enhancer.CheckerboardEnhancer.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/PyCBD/checkerboard_enhancement/checkerboard_enhancer.html#CheckerboardEnhancer.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#PyCBD.checkerboard_enhancement.checkerboard_enhancer.CheckerboardEnhancer.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>Class constructor.</p>
+</dd></dl>
+
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#PyCBD.checkerboard_enhancement.checkerboard_enhancer.CheckerboardEnhancer.__init__" title="PyCBD.checkerboard_enhancement.checkerboard_enhancer.CheckerboardEnhancer.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>()</p></td>
+<td><p>Class constructor.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#PyCBD.checkerboard_enhancement.checkerboard_enhancer.CheckerboardEnhancer.dewarp_image" title="PyCBD.checkerboard_enhancement.checkerboard_enhancer.CheckerboardEnhancer.dewarp_image"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dewarp_image</span></code></a>(image, board_uv, board_xy[, ...])</p></td>
+<td><p>Remove lens and perspective distortion from the image.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#PyCBD.checkerboard_enhancement.checkerboard_enhancer.CheckerboardEnhancer.fit_and_expand_board" title="PyCBD.checkerboard_enhancement.checkerboard_enhancer.CheckerboardEnhancer.fit_and_expand_board"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fit_and_expand_board</span></code></a>(image, board_uv, ...[, ...])</p></td>
+<td><p>Train a model based on corner inputs and use this model to predict all corners in the checkerboard.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#PyCBD.checkerboard_enhancement.checkerboard_enhancer.CheckerboardEnhancer.fit_and_predict_board" title="PyCBD.checkerboard_enhancement.checkerboard_enhancer.CheckerboardEnhancer.fit_and_predict_board"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fit_and_predict_board</span></code></a>(image, board_uv, board_xy)</p></td>
+<td><p>Train a model based on corner inputs and use this model to predict all corners in the checkerboard.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="PyCBD.checkerboard_enhancement.checkerboard_enhancer.CheckerboardEnhancer.dewarp_image">
+<span class="sig-name descname"><span class="pre">dewarp_image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">board_uv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">board_xy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_stored</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/PyCBD/checkerboard_enhancement/checkerboard_enhancer.html#CheckerboardEnhancer.dewarp_image"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#PyCBD.checkerboard_enhancement.checkerboard_enhancer.CheckerboardEnhancer.dewarp_image" title="Permalink to this definition"></a></dt>
+<dd><p>Remove lens and perspective distortion from the image.</p>
+<p>This method can either be performed separately, in which case new Gaussian processes need to be fitted to the
+checkerboard, or after using <a class="reference internal" href="#PyCBD.checkerboard_enhancement.checkerboard_enhancer.CheckerboardEnhancer.fit_and_predict_board" title="PyCBD.checkerboard_enhancement.checkerboard_enhancer.CheckerboardEnhancer.fit_and_predict_board"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fit_and_predict_board()</span></code></a>, where the stored Gaussian
+processes can be used instead.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>image</strong> (<a class="reference external" href="https://numpy.org/doc/1.21/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.21)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.12)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>, <a class="reference external" href="https://numpy.org/doc/1.21/reference/generated/numpy.dtype.html#numpy.dtype" title="(in NumPy v1.21)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dtype</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.TypeVar" title="(in Python v3.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">TypeVar</span></code></a>(<code class="docutils literal notranslate"><span class="pre">ScalarType</span></code>, bound= <a class="reference external" href="https://numpy.org/doc/1.21/reference/arrays.scalars.html#numpy.generic" title="(in NumPy v1.21)"><code class="xref py py-class docutils literal notranslate"><span class="pre">generic</span></code></a>, covariant=True)]]) – Original image that needs to be dewarped.</p></li>
+<li><p><strong>board_uv</strong> (<a class="reference external" href="https://numpy.org/doc/1.21/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.21)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.12)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>, <a class="reference external" href="https://numpy.org/doc/1.21/reference/generated/numpy.dtype.html#numpy.dtype" title="(in NumPy v1.21)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dtype</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.TypeVar" title="(in Python v3.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">TypeVar</span></code></a>(<code class="docutils literal notranslate"><span class="pre">ScalarType</span></code>, bound= <a class="reference external" href="https://numpy.org/doc/1.21/reference/arrays.scalars.html#numpy.generic" title="(in NumPy v1.21)"><code class="xref py py-class docutils literal notranslate"><span class="pre">generic</span></code></a>, covariant=True)]]) – Image corner coordinates (u, v).</p></li>
+<li><p><strong>board_xy</strong> (<a class="reference external" href="https://numpy.org/doc/1.21/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.21)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.12)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>, <a class="reference external" href="https://numpy.org/doc/1.21/reference/generated/numpy.dtype.html#numpy.dtype" title="(in NumPy v1.21)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dtype</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.TypeVar" title="(in Python v3.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">TypeVar</span></code></a>(<code class="docutils literal notranslate"><span class="pre">ScalarType</span></code>, bound= <a class="reference external" href="https://numpy.org/doc/1.21/reference/arrays.scalars.html#numpy.generic" title="(in NumPy v1.21)"><code class="xref py py-class docutils literal notranslate"><span class="pre">generic</span></code></a>, covariant=True)]]) – Local corner coordinates (x, y).</p></li>
+<li><p><strong>use_stored</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a>) – Whether to reuse the stored Gaussian processes or fit new ones.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://numpy.org/doc/1.21/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.21)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.12)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>, <a class="reference external" href="https://numpy.org/doc/1.21/reference/generated/numpy.dtype.html#numpy.dtype" title="(in NumPy v1.21)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dtype</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.TypeVar" title="(in Python v3.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">TypeVar</span></code></a>(<code class="docutils literal notranslate"><span class="pre">ScalarType</span></code>, bound= <a class="reference external" href="https://numpy.org/doc/1.21/reference/arrays.scalars.html#numpy.generic" title="(in NumPy v1.21)"><code class="xref py py-class docutils literal notranslate"><span class="pre">generic</span></code></a>, covariant=True)]]</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The dewarped image.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="PyCBD.checkerboard_enhancement.checkerboard_enhancer.CheckerboardEnhancer.fit_and_expand_board">
+<span class="sig-name descname"><span class="pre">fit_and_expand_board</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">board_uv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">board_xy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">corners_uv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">board_shape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/PyCBD/checkerboard_enhancement/checkerboard_enhancer.html#CheckerboardEnhancer.fit_and_expand_board"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#PyCBD.checkerboard_enhancement.checkerboard_enhancer.CheckerboardEnhancer.fit_and_expand_board" title="Permalink to this definition"></a></dt>
+<dd><p>Train a model based on corner inputs and use this model to predict all corners in the checkerboard.</p>
+<p>Two Gaussian processes are used for this. One to map the local xy-coordinates to the u-coordinates of the
+corners in the image. Another one to map the local xy-coordinates to the v-coordinates of the corners in the
+image. We iteratively expand the grid in local xy-space to try and find corners in the image that are not
+allocated to a point in the checkerboard grid yet.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>image</strong> (<a class="reference external" href="https://numpy.org/doc/1.21/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.21)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.12)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>, <a class="reference external" href="https://numpy.org/doc/1.21/reference/generated/numpy.dtype.html#numpy.dtype" title="(in NumPy v1.21)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dtype</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.TypeVar" title="(in Python v3.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">TypeVar</span></code></a>(<code class="docutils literal notranslate"><span class="pre">ScalarType</span></code>, bound= <a class="reference external" href="https://numpy.org/doc/1.21/reference/arrays.scalars.html#numpy.generic" title="(in NumPy v1.21)"><code class="xref py py-class docutils literal notranslate"><span class="pre">generic</span></code></a>, covariant=True)]]) – Image containing the checkerboard (used for plotting intermediate results).</p></li>
+<li><p><strong>board_uv</strong> (<a class="reference external" href="https://numpy.org/doc/1.21/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.21)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.12)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>, <a class="reference external" href="https://numpy.org/doc/1.21/reference/generated/numpy.dtype.html#numpy.dtype" title="(in NumPy v1.21)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dtype</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.TypeVar" title="(in Python v3.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">TypeVar</span></code></a>(<code class="docutils literal notranslate"><span class="pre">ScalarType</span></code>, bound= <a class="reference external" href="https://numpy.org/doc/1.21/reference/arrays.scalars.html#numpy.generic" title="(in NumPy v1.21)"><code class="xref py py-class docutils literal notranslate"><span class="pre">generic</span></code></a>, covariant=True)]]) – Image corner coordinates (u, v)</p></li>
+<li><p><strong>board_xy</strong> (<a class="reference external" href="https://numpy.org/doc/1.21/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.21)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.12)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>, <a class="reference external" href="https://numpy.org/doc/1.21/reference/generated/numpy.dtype.html#numpy.dtype" title="(in NumPy v1.21)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dtype</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.TypeVar" title="(in Python v3.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">TypeVar</span></code></a>(<code class="docutils literal notranslate"><span class="pre">ScalarType</span></code>, bound= <a class="reference external" href="https://numpy.org/doc/1.21/reference/arrays.scalars.html#numpy.generic" title="(in NumPy v1.21)"><code class="xref py py-class docutils literal notranslate"><span class="pre">generic</span></code></a>, covariant=True)]]) – Local corner coordinates (x, y)</p></li>
+<li><p><strong>corners_uv</strong> (<a class="reference external" href="https://numpy.org/doc/1.21/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.21)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.12)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>, <a class="reference external" href="https://numpy.org/doc/1.21/reference/generated/numpy.dtype.html#numpy.dtype" title="(in NumPy v1.21)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dtype</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.TypeVar" title="(in Python v3.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">TypeVar</span></code></a>(<code class="docutils literal notranslate"><span class="pre">ScalarType</span></code>, bound= <a class="reference external" href="https://numpy.org/doc/1.21/reference/arrays.scalars.html#numpy.generic" title="(in NumPy v1.21)"><code class="xref py py-class docutils literal notranslate"><span class="pre">generic</span></code></a>, covariant=True)]]) – Coordinates (u, v) of all detected corners, including those that have not been assigned to a
+checkerboard.</p></li>
+<li><p><strong>board_shape</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.12)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.12)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>]]) – The shape (rows, cols) of the checkerboard inner corners. This can be used to prevent the
+method from trying to expand the checkerboard further in the x/y direction when all columns/rows have already
+been found.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.12)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code></a>[<a class="reference external" href="https://numpy.org/doc/1.21/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.21)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.12)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>, <a class="reference external" href="https://numpy.org/doc/1.21/reference/generated/numpy.dtype.html#numpy.dtype" title="(in NumPy v1.21)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dtype</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.TypeVar" title="(in Python v3.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">TypeVar</span></code></a>(<code class="docutils literal notranslate"><span class="pre">ScalarType</span></code>, bound= <a class="reference external" href="https://numpy.org/doc/1.21/reference/arrays.scalars.html#numpy.generic" title="(in NumPy v1.21)"><code class="xref py py-class docutils literal notranslate"><span class="pre">generic</span></code></a>, covariant=True)]], <a class="reference external" href="https://numpy.org/doc/1.21/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.21)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.12)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>, <a class="reference external" href="https://numpy.org/doc/1.21/reference/generated/numpy.dtype.html#numpy.dtype" title="(in NumPy v1.21)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dtype</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.TypeVar" title="(in Python v3.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">TypeVar</span></code></a>(<code class="docutils literal notranslate"><span class="pre">ScalarType</span></code>, bound= <a class="reference external" href="https://numpy.org/doc/1.21/reference/arrays.scalars.html#numpy.generic" title="(in NumPy v1.21)"><code class="xref py py-class docutils literal notranslate"><span class="pre">generic</span></code></a>, covariant=True)]]]</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>board_uv, the corner image coordinates, and board_xy, their local coordinates.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="PyCBD.checkerboard_enhancement.checkerboard_enhancer.CheckerboardEnhancer.fit_and_predict_board">
+<span class="sig-name descname"><span class="pre">fit_and_predict_board</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">board_uv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">board_xy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_of_image</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/PyCBD/checkerboard_enhancement/checkerboard_enhancer.html#CheckerboardEnhancer.fit_and_predict_board"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#PyCBD.checkerboard_enhancement.checkerboard_enhancer.CheckerboardEnhancer.fit_and_predict_board" title="Permalink to this definition"></a></dt>
+<dd><p>Train a model based on corner inputs and use this model to predict all corners in the checkerboard.</p>
+<p>This function is used after the final iteration in function fit_and_expand_board. It is assumed that all
+detected corner are allocated to point in the checkerboard grid. This means no loose detected corners and also
+false positives (detected corners that are not part of the checkerboard grid) are removed. Now we train the GPs
+one final time on all corners. We fill in the positions in xy-space where no corner was detected, e.g.
+occlusions. Once this model is trained, we can use it to predict points (pixel uv-coordinates) in the image for
+all corners. This fills up any occlusions and smooths out the board, removing jitter from the detected corners.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>image</strong> (<a class="reference external" href="https://numpy.org/doc/1.21/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.21)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.12)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>, <a class="reference external" href="https://numpy.org/doc/1.21/reference/generated/numpy.dtype.html#numpy.dtype" title="(in NumPy v1.21)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dtype</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.TypeVar" title="(in Python v3.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">TypeVar</span></code></a>(<code class="docutils literal notranslate"><span class="pre">ScalarType</span></code>, bound= <a class="reference external" href="https://numpy.org/doc/1.21/reference/arrays.scalars.html#numpy.generic" title="(in NumPy v1.21)"><code class="xref py py-class docutils literal notranslate"><span class="pre">generic</span></code></a>, covariant=True)]]) – The image containing the checkerboard (used for determining image limits).</p></li>
+<li><p><strong>board_uv</strong> (<a class="reference external" href="https://numpy.org/doc/1.21/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.21)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.12)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>, <a class="reference external" href="https://numpy.org/doc/1.21/reference/generated/numpy.dtype.html#numpy.dtype" title="(in NumPy v1.21)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dtype</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.TypeVar" title="(in Python v3.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">TypeVar</span></code></a>(<code class="docutils literal notranslate"><span class="pre">ScalarType</span></code>, bound= <a class="reference external" href="https://numpy.org/doc/1.21/reference/arrays.scalars.html#numpy.generic" title="(in NumPy v1.21)"><code class="xref py py-class docutils literal notranslate"><span class="pre">generic</span></code></a>, covariant=True)]]) – Image corner coordinates (u, v).</p></li>
+<li><p><strong>board_xy</strong> (<a class="reference external" href="https://numpy.org/doc/1.21/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.21)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.12)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>, <a class="reference external" href="https://numpy.org/doc/1.21/reference/generated/numpy.dtype.html#numpy.dtype" title="(in NumPy v1.21)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dtype</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.TypeVar" title="(in Python v3.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">TypeVar</span></code></a>(<code class="docutils literal notranslate"><span class="pre">ScalarType</span></code>, bound= <a class="reference external" href="https://numpy.org/doc/1.21/reference/arrays.scalars.html#numpy.generic" title="(in NumPy v1.21)"><code class="xref py py-class docutils literal notranslate"><span class="pre">generic</span></code></a>, covariant=True)]]) – Local corner coordinates (x, y).</p></li>
+<li><p><strong>out_of_image</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a>) – Whether to include predicted points beyond the limits of the image.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Tuple" title="(in Python v3.12)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code></a>[<a class="reference external" href="https://numpy.org/doc/1.21/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.21)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.12)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>, <a class="reference external" href="https://numpy.org/doc/1.21/reference/generated/numpy.dtype.html#numpy.dtype" title="(in NumPy v1.21)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dtype</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.TypeVar" title="(in Python v3.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">TypeVar</span></code></a>(<code class="docutils literal notranslate"><span class="pre">ScalarType</span></code>, bound= <a class="reference external" href="https://numpy.org/doc/1.21/reference/arrays.scalars.html#numpy.generic" title="(in NumPy v1.21)"><code class="xref py py-class docutils literal notranslate"><span class="pre">generic</span></code></a>, covariant=True)]], <a class="reference external" href="https://numpy.org/doc/1.21/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.21)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.12)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>, <a class="reference external" href="https://numpy.org/doc/1.21/reference/generated/numpy.dtype.html#numpy.dtype" title="(in NumPy v1.21)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dtype</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.TypeVar" title="(in Python v3.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">TypeVar</span></code></a>(<code class="docutils literal notranslate"><span class="pre">ScalarType</span></code>, bound= <a class="reference external" href="https://numpy.org/doc/1.21/reference/arrays.scalars.html#numpy.generic" title="(in NumPy v1.21)"><code class="xref py py-class docutils literal notranslate"><span class="pre">generic</span></code></a>, covariant=True)]]]</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>board_uv_predicted_grid, the predicted corner image coordinates, and board_xy_predicted_grid, their
+local coordinates.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="PyCBD.checkerboard_enhancement.checkerboard_enhancer.html" class="btn btn-neutral float-left" title="PyCBD.checkerboard_enhancement.checkerboard_enhancer" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="PyCBD.logger_configuration.html" class="btn btn-neutral float-right" title="PyCBD.logger_configuration" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, InViLab.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

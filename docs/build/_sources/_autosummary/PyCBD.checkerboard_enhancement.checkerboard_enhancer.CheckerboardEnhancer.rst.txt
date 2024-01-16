@@ -1,0 +1,22 @@
+PyCBD.checkerboard\_enhancement.checkerboard\_enhancer.CheckerboardEnhancer
+===========================================================================
+
+.. currentmodule:: PyCBD.checkerboard_enhancement.checkerboard_enhancer
+
+.. autoclass:: CheckerboardEnhancer
+   :members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~CheckerboardEnhancer.__init__
+      ~CheckerboardEnhancer.dewarp_image
+      ~CheckerboardEnhancer.fit_and_expand_board
+      ~CheckerboardEnhancer.fit_and_predict_board
+   
+   

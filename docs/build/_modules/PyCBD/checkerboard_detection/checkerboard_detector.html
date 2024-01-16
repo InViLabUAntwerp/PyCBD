@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PyCBD.checkerboard_detection.checkerboard_detector &mdash; PyCBD 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            PyCBD
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../readme_link.html">Readme</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../_autosummary/PyCBD.html">PyCBD</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PyCBD</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">PyCBD.checkerboard_detection.checkerboard_detector</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for PyCBD.checkerboard_detection.checkerboard_detector</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">cv2</span>
+<span class="kn">import</span> <span class="nn">numpy.typing</span> <span class="k">as</span> <span class="nn">npt</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">PyCBD.checkerboard_detection.DLL.Checkerboard</span> <span class="kn">import</span> <span class="n">Checkerboard</span>
+<span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s2">&quot;You are probably using an incompatible version of python. Module was compiled for Python 3.8 &amp; &quot;</span>
+                      <span class="s2">&quot;3.10&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">with_traceback</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">__traceback__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="CheckerboardDetector"><a class="viewcode-back" href="../../../_autosummary/PyCBD.checkerboard_detection.checkerboard_detector.CheckerboardDetector.html#PyCBD.checkerboard_detection.checkerboard_detector.CheckerboardDetector">[docs]</a><span class="k">class</span> <span class="nc">CheckerboardDetector</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Checkerboard detector class.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="CheckerboardDetector.__init__"><a class="viewcode-back" href="../../../_autosummary/PyCBD.checkerboard_detection.checkerboard_detector.CheckerboardDetector.html#PyCBD.checkerboard_detection.checkerboard_detector.CheckerboardDetector.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">detector</span><span class="p">:</span> <span class="n">Checkerboard</span> <span class="o">=</span> <span class="n">Checkerboard</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">detector</span><span class="o">.</span><span class="n">norm</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">detector</span><span class="o">.</span><span class="n">score_thr</span> <span class="o">=</span> <span class="mf">0.01</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">detector</span><span class="o">.</span><span class="n">strict_grow</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">detector</span><span class="o">.</span><span class="n">show_grow_processing</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">detector</span><span class="o">.</span><span class="n">overlay</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">detector</span><span class="o">.</span><span class="n">show_debug_image</span> <span class="o">=</span> <span class="kc">False</span></div>
+
+<div class="viewcode-block" id="CheckerboardDetector.detect_checkerboard"><a class="viewcode-back" href="../../../_autosummary/PyCBD.checkerboard_detection.checkerboard_detector.CheckerboardDetector.html#PyCBD.checkerboard_detection.checkerboard_detector.CheckerboardDetector.detect_checkerboard">[docs]</a>    <span class="k">def</span> <span class="nf">detect_checkerboard</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Detect the checkerboard in the image.</span>
+
+<span class="sd">        Sometimes failed detections are caused by the image being too big or too small (generally &gt; 2000 pixels or &lt; 400</span>
+<span class="sd">        pixels), in this case rescaling the image might solve the problem.</span>
+
+<span class="sd">        :param image: A numpy array representing the image. If it is a color image it should be in BGR format.</span>
+<span class="sd">        :returns: Board_uv: coordinates (u, v) of detected corners assigned to a checkerboard; board_xy: local</span>
+<span class="sd">           coordinates (x, y) of the detected corners assigned to checkerboard; corners_uv: coordinates (u, v) of all</span>
+<span class="sd">           detected corners, including those that have not been assigned to a checkerboard.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">detector</span><span class="o">.</span><span class="n">cols</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">detector</span><span class="o">.</span><span class="n">rows</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_image</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_detect_corners</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">result</span><span class="p">:</span>
+            <span class="n">board_uv</span><span class="p">,</span> <span class="n">corners_uv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extract_corners</span><span class="p">()</span>
+            <span class="n">board_xy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_calculate_local_coordinates</span><span class="p">(</span><span class="n">board_uv</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">board_uv</span><span class="p">,</span> <span class="n">board_xy</span><span class="p">,</span> <span class="n">corners_uv</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([]),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([]),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span></div>
+
+    <span class="k">def</span> <span class="nf">_detect_corners</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Detect corners in image.&quot;&quot;&quot;</span>
+        <span class="n">height</span><span class="p">,</span> <span class="n">width</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">image</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">detector</span><span class="o">.</span><span class="n">array_norm_to_image</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">width</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">detector</span><span class="o">.</span><span class="n">find_corners</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">detector</span><span class="o">.</span><span class="n">find_board_from_corners</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">detector</span><span class="o">.</span><span class="n">rows</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">detector</span><span class="o">.</span><span class="n">cols</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">_extract_corners</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Extract detected corners from C++ object.&quot;&quot;&quot;</span>
+        <span class="n">corners_u</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">detector</span><span class="o">.</span><span class="n">number_of_corners</span><span class="p">)</span>
+        <span class="n">corners_v</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">detector</span><span class="o">.</span><span class="n">number_of_corners</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">detector</span><span class="o">.</span><span class="n">GetCorners</span><span class="p">(</span><span class="n">corners_u</span><span class="p">,</span> <span class="n">corners_v</span><span class="p">)</span>
+        <span class="n">corners_uv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">corners_u</span><span class="p">,</span> <span class="n">corners_v</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+        <span class="n">board_u</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">detector</span><span class="o">.</span><span class="n">rows</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">detector</span><span class="o">.</span><span class="n">cols</span><span class="p">)</span>
+        <span class="n">board_v</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">detector</span><span class="o">.</span><span class="n">rows</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">detector</span><span class="o">.</span><span class="n">cols</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">detector</span><span class="o">.</span><span class="n">GetBoardCorners</span><span class="p">(</span><span class="n">board_u</span><span class="p">,</span> <span class="n">board_v</span><span class="p">)</span>
+        <span class="n">board_uv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">board_u</span><span class="p">,</span> <span class="n">board_v</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+        <span class="k">return</span> <span class="n">board_uv</span><span class="p">,</span> <span class="n">corners_uv</span>
+
+    <span class="k">def</span> <span class="nf">_calculate_local_coordinates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">board_uv</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Gives local corner coordinates in (x, y).&quot;&quot;&quot;</span>
+        <span class="n">board_xy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">board_uv</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">2</span><span class="p">))</span>  <span class="c1"># initialise</span>
+        <span class="n">cnt</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">detector</span><span class="o">.</span><span class="n">rows</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">detector</span><span class="o">.</span><span class="n">cols</span><span class="p">):</span>
+                <span class="n">new_local_coordinate</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)</span>
+                <span class="n">board_xy</span><span class="p">[</span><span class="n">cnt</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">new_local_coordinate</span>
+                <span class="n">cnt</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">board_xy</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_prepare_image</span><span class="p">(</span><span class="n">image</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check whether the image is compatible, convert the image to grayscale if necessary, and normalize the image.</span>
+
+<span class="sd">        :param image: A numpy array representing the image. If it is a color image it should be in BGR format.</span>
+<span class="sd">        :raises TypeError: If `image` is not a string or numpy array.</span>
+<span class="sd">        :raises ValueError: If the image array has incompatible dimensions or an incompatible amount of channels.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;`image` should be a numpy array.&quot;</span><span class="p">)</span>
+        <span class="n">image</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>  <span class="c1"># Just to make sure the original image does not get modified</span>
+
+        <span class="c1"># Convert to grayscale if necessary</span>
+        <span class="n">n_dimensions</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">n_dimensions</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">n_channels</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">n_channels</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="n">image</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">cvtColor</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">cv2</span><span class="o">.</span><span class="n">COLOR_BGR2GRAY</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="ow">not</span> <span class="n">n_channels</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>  <span class="c1"># Usually the array won&#39;t have 3 dimensions if there is only 1 channel</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The image should have 1 or 3 channels.&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">image</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Image arrays should be 2D or 3D.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Convert to float and normalize</span>
+        <span class="n">image</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="n">image</span> <span class="o">=</span> <span class="p">(</span><span class="n">image</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">amin</span><span class="p">(</span><span class="n">image</span><span class="p">))</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">ptp</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">image</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, InViLab.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

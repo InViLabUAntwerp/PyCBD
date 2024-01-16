@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PyCBD: Python Checkerboard Detection Toolbox &mdash; PyCBD 1.0.0 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="PyCBD" href="_autosummary/PyCBD.html" />
+    <link rel="prev" title="PyCBD: Python Checkerboard Detection Toolbox" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            PyCBD
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Readme</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#about">About</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#usage">Usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#citation">Citation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#license">License</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#contact">Contact</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#acknowledgements">Acknowledgements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#references">References</a></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="_autosummary/PyCBD.html">PyCBD</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PyCBD</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">PyCBD: Python Checkerboard Detection Toolbox</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/readme_link.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pycbd-python-checkerboard-detection-toolbox">
+<h1>PyCBD: Python Checkerboard Detection Toolbox<a class="headerlink" href="#pycbd-python-checkerboard-detection-toolbox" title="Permalink to this heading"></a></h1>
+<section id="about">
+<h2>About<a class="headerlink" href="#about" title="Permalink to this heading"></a></h2>
+<p>Python checkerboard detection toolbox with Gaussian process based enhancement which can be used to expand detected
+checkerboards beyond occlusions, predict corners to fill in occlusions, refine corner positions, and dewarp +
+rectify the checkerboard images.</p>
+<ul class="simple">
+<li><p>Source: https://github.com/InViLabUAntwerp/PyCBD</p></li>
+</ul>
+</section>
+<section id="requirements">
+<h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p>Microsoft Windows OS</p></li>
+<li><p>MS VCRUNTIME14_01 needs to be installed</p></li>
+<li><p>Python ~=3.8, ~=3.10 (3.10 recommended)</p></li>
+</ul>
+</section>
+<section id="usage">
+<h2>Usage<a class="headerlink" href="#usage" title="Permalink to this heading"></a></h2>
+<p>Images should either be 2D grayscale (x, y) or 3D BGR (x, y, c) numpy arrays. It is recommended to use the <code class="docutils literal notranslate"><span class="pre">CBDPipeline</span></code>
+class, which combines the detector and enhancer. While it is not necessary to provide the checkerboard dimensions (the
+amount of inner corners), providing them will allow the detector to determine whether the checkerboard got detected in
+its entirety or only partially, and whether the object space coordinates are “absolute” or only “relative” to what got
+detected in the image. A simple checkerboard detection is performed as follows:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">PyCBD.pipelines</span> <span class="kn">import</span> <span class="n">CBDPipeline</span>
+
+<span class="n">detector</span> <span class="o">=</span> <span class="n">CBDPipeline</span><span class="p">()</span>
+<span class="n">result</span><span class="p">,</span> <span class="n">board_uv</span><span class="p">,</span> <span class="n">board_xy</span> <span class="o">=</span> <span class="n">detection_pipeline</span><span class="o">.</span><span class="n">detect_checkerboard</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The enhancer that handles board expansion and prediction is not used by default and is activated by passing additional
+arguments to the pipeline constructor. When using board expansion, it is recommended to provide the checkerboard
+dimensions because it is used to stops/skip expansion when the entire board has been found. In order for the enhancer
+to work properly, the detected corners must have the correct coordinates, otherwise all results achieved with the
+enhancer will be wrong. The enhancer is activated as follows:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">PyCBD.pipelines</span> <span class="kn">import</span> <span class="n">CBDPipeline</span>
+
+<span class="n">detector</span> <span class="o">=</span> <span class="n">CBDPipeline</span><span class="p">(</span><span class="n">expand</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">predict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">result</span><span class="p">,</span> <span class="n">board_uv</span><span class="p">,</span> <span class="n">board_xy</span> <span class="o">=</span> <span class="n">detection_pipeline</span><span class="o">.</span><span class="n">detect_checkerboard</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="p">(</span><span class="n">n_rows</span><span class="p">,</span> <span class="n">n_cols</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>It is also possible to use another detector in combination with the pipeline. The requirements are that this detector
+is contained within a class that has a  <code class="docutils literal notranslate"><span class="pre">detect_checkerboard</span></code> method that accepts the same inputs and provides the
+same outputs as our <code class="docutils literal notranslate"><span class="pre">CheckerboardDetector</span></code> class. A class instance of the detector can then be passed to the
+<code class="docutils literal notranslate"><span class="pre">CBDPipeline</span></code> constructor:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">PyCBD.pipelines</span> <span class="kn">import</span> <span class="n">CBDPipeline</span>
+<span class="kn">import</span> <span class="nn">YourCustomDetector</span>
+
+<span class="n">detector</span> <span class="o">=</span> <span class="n">CBDPipeline</span><span class="p">(</span><span class="n">YourCustomDetector</span><span class="p">())</span>
+<span class="n">result</span><span class="p">,</span> <span class="n">board_uv</span><span class="p">,</span> <span class="n">board_xy</span> <span class="o">=</span> <span class="n">detection_pipeline</span><span class="o">.</span><span class="n">detect_checkerboard</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Instead of using the pipeline users can also use the separate <code class="docutils literal notranslate"><span class="pre">CheckerboardDetector</span></code> for detection:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">PyCBD.checkerboard_detection.checkerboard_detector</span> <span class="kn">import</span> <span class="n">CheckerboardDetector</span>
+<span class="kn">from</span> <span class="nn">PyCBD.pipelines</span> <span class="kn">import</span> <span class="n">prepare_image</span>
+
+
+<span class="n">prepared_image</span> <span class="o">=</span> <span class="n">prepare_image</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
+<span class="n">checkerboard_detector</span> <span class="o">=</span> <span class="n">CheckerboardDetector</span><span class="p">()</span>
+<span class="n">detected_board_uv</span><span class="p">,</span> <span class="n">detected_board_xy</span><span class="p">,</span> <span class="n">detected_corners_uv</span> <span class="o">=</span> <span class="n">checkerboard_detector</span><span class="o">.</span><span class="n">detect_checkerboard</span><span class="p">(</span><span class="n">prepared_image</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>and the <code class="docutils literal notranslate"><span class="pre">CheckerboardEnhancer</span></code> for expanding the board and predicting corners:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">PyCBD.checkerboard_enhancement.checkerboard_enhancer</span> <span class="kn">import</span> <span class="n">CheckerboardEnhancer</span>
+
+<span class="n">checkerboard_enhancer</span> <span class="o">=</span> <span class="n">CheckerboardEnhancer</span><span class="p">()</span>
+<span class="n">expanded_board_uv</span><span class="p">,</span> <span class="n">expanded_board_xy</span> <span class="o">=</span> <span class="n">checkerboard_enhancer</span><span class="o">.</span><span class="n">fit_and_expand_board</span><span class="p">(</span><span class="n">image</span><span class="p">,</span>
+                                                                                  <span class="n">detected_board_uv</span><span class="p">,</span>
+                                                                                  <span class="n">detected_board_xy</span><span class="p">,</span>
+                                                                                  <span class="n">detected_corners_uv</span><span class="p">)</span>
+<span class="n">predicted_board_uv</span><span class="p">,</span> <span class="n">predicted_board_xy</span> <span class="o">=</span> <span class="n">checkerboard_enhancer</span><span class="o">.</span><span class="n">fit_and_predict_board</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> 
+                                                                                     <span class="n">expanded_board_uv</span><span class="p">,</span>
+                                                                                     <span class="n">expanded_board_xy</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Finally, the enhancer can be used to remove warping and perspective error from the image after the checkerboard has been
+detected. Both <code class="docutils literal notranslate"><span class="pre">CBDPipeline</span></code> and <code class="docutils literal notranslate"><span class="pre">CheckerboardEnhancer</span></code> have a <code class="docutils literal notranslate"><span class="pre">dewarp_image</span></code> method for this purpose:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dewarped</span> <span class="o">=</span> <span class="n">pipeline_or_enhancer</span><span class="o">.</span><span class="n">dewarp_image</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">board_uv</span><span class="p">,</span> <span class="n">board_xy</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>In case the detection fails, or you get a weird outcome, you can set certain flags on the different classes to show
+intermediate results and diagnose the problem, and configure the package logger, so you get additional info prints
+during execution. If there are problems at the enhancer level, it is possible they can be resolved by adjusting the
+parameters. Please refer to the documentation for additional in-depth information.</p>
+</section>
+<section id="citation">
+<h2>Citation<a class="headerlink" href="#citation" title="Permalink to this heading"></a></h2>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>@Article{math11224568,
+    AUTHOR = {Hillen, Michaël and De Boi, Ivan and De Kerf, Thomas and Sels, Seppe and Cardenas De La Hoz, Edgar and Gladines, Jona and Steenackers, Gunther and Penne, Rudi and Vanlanduit, Steve},
+    TITLE = {Enhanced Checkerboard Detection Using Gaussian Processes},
+    JOURNAL = {Mathematics},
+    VOLUME = {11},
+    YEAR = {2023},
+    NUMBER = {22},
+    ARTICLE-NUMBER = {4568},
+    URL = {https://www.mdpi.com/2227-7390/11/22/4568},
+    ISSN = {2227-7390},
+    DOI = {10.3390/math11224568}
+}
+</pre></div>
+</div>
+</section>
+<section id="license">
+<h2>License<a class="headerlink" href="#license" title="Permalink to this heading"></a></h2>
+<p>Distributed under the GNU General Public License v3.0. Check the <code class="docutils literal notranslate"><span class="pre">LICENCE</span></code> files for more info.</p>
+</section>
+<section id="contact">
+<h2>Contact<a class="headerlink" href="#contact" title="Permalink to this heading"></a></h2>
+<p>InViLab - <a class="reference external" href="mailto:invilab&#37;&#52;&#48;uantwerpen&#46;be">invilab<span>&#64;</span>uantwerpen<span>&#46;</span>be</a> - <a class="reference external" href="https://www.invilab.be/">website</a> -
+<a class="reference external" href="https://www.linkedin.com/company/invilab-uantwerp">LinkedIn</a></p>
+</section>
+<section id="acknowledgements">
+<h2>Acknowledgements<a class="headerlink" href="#acknowledgements" title="Permalink to this heading"></a></h2>
+<p>The checkerboard detector in this toolbox is a modified version of the C++ implementation of libcbdetect
+<a class="reference internal" href="#ref1"><span class="xref myst">[1]</span></a><a class="reference internal" href="#ref2"><span class="xref myst">[2]</span></a>. For the Gaussian processes we use the GPy library <a class="reference internal" href="#ref3"><span class="xref myst">[3]</span></a></p>
+</section>
+<section id="references">
+<h2>References<a class="headerlink" href="#references" title="Permalink to this heading"></a></h2>
+<p><a id="ref1">[1]</a>
+Geiger, A., Moosmann, F., Car, Ö., &amp; Schuster, B. (2012, May). Automatic camera and range sensor calibration using a
+single shot. In Robotics and Automation (ICRA), 2012 IEEE International Conference on (pp. 3936-3943). IEEE.</p>
+<p><a id="ref2">[2]</a>
+ftdlyc (March 13 2020). Unofficial implemention of libcbdetect in C++. <a class="reference external" href="https://github.com/ftdlyc/libcbdetect">https://github.com/ftdlyc/libcbdetect</a></p>
+<p><a id="ref3">[3]</a>
+GPy (since 2012). GPy: A Gaussian process framework in python. <a class="reference external" href="http://github.com/SheffieldML/GPy">http://github.com/SheffieldML/GPy</a></p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="PyCBD: Python Checkerboard Detection Toolbox" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="_autosummary/PyCBD.html" class="btn btn-neutral float-right" title="PyCBD" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, InViLab.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

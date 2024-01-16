@@ -1,0 +1,10 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+
+# JetBrains IDE
+.idea/
+
+docs/source/_autosummary
+
+dist/
+*.egg-info
