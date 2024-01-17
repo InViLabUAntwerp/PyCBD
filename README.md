@@ -7,6 +7,7 @@ checkerboards beyond occlusions, predict corners to fill in occlusions, refine c
 rectify the checkerboard images.
 
 * Source: https://github.com/InViLabUAntwerp/PyCBD
+* PyPi: https://pypi.org/project/PyCBD/
 
 ## Requirements
 
