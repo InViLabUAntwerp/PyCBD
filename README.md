@@ -13,7 +13,7 @@ rectify the checkerboard images.
 
 * Microsoft Windows OS
 * MS VCRUNTIME14_01 needs to be installed
-* Python ~=3.8, ~=3.10 (3.10 recommended)
+* Python ~=3.10, 3.11, 3.12
 
 ## Usage
 
