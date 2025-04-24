@@ -5,8 +5,10 @@ from typing import Tuple
 try:
     from PyCBD.checkerboard_detection.DLL.Checkerboard import Checkerboard
 except ImportError as e:
-    raise ImportError("You are probably using an incompatible version of python. Module was compiled for Python 3.8 & "
-                      "3.10").with_traceback(e.__traceback__)
+    raise ImportError(
+    f"You are probably using an incompatible version of Python. "
+    f"Module was compiled for Python 3.10, 3.11, 3.12. Original error: {e}").with_traceback(e.__traceback__)
+
 
 
 class CheckerboardDetector:
