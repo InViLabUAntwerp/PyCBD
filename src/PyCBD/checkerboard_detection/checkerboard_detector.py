@@ -1,14 +1,9 @@
-import numpy as np
-import cv2
-import numpy.typing as npt
 from typing import Tuple
-try:
-    from PyCBD.checkerboard_detection.DLL.Checkerboard import Checkerboard
-except ImportError as e:
-    raise ImportError(
-    f"You are probably using an incompatible version of Python. "
-    f"Module was compiled for Python 3.10, 3.11, 3.12. Original error: {e}").with_traceback(e.__traceback__)
 
+import cv2
+import numpy as np
+import numpy.typing as npt
+from libCBDetect import Checkerboard
 
 
 class CheckerboardDetector:
@@ -61,11 +56,11 @@ class CheckerboardDetector:
         """Extract detected corners from C++ object."""
         corners_u = np.zeros(self.detector.number_of_corners)
         corners_v = np.zeros(self.detector.number_of_corners)
-        self.detector.GetCorners(corners_u, corners_v)
+        self.detector.get_corners(corners_u, corners_v)
         corners_uv = np.vstack((corners_u, corners_v)).T
         board_u = np.zeros(self.detector.rows * self.detector.cols)
         board_v = np.zeros(self.detector.rows * self.detector.cols)
-        self.detector.GetBoardCorners(board_u, board_v)
+        self.detector.get_board_corners(board_u, board_v)
         board_uv = np.vstack((board_u, board_v)).T
         return board_uv, corners_uv
 

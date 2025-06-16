@@ -1,7 +1,7 @@
 """This module contains the checkerboard detection pipelines."""
 
-from PyCBD.checkerboard_detection.checkerboard_detector import CheckerboardDetector
-from PyCBD.checkerboard_enhancement.checkerboard_enhancer import CheckerboardEnhancer
+from .checkerboard_detection import CheckerboardDetector
+from .checkerboard_enhancement import CheckerboardEnhancer
 import numpy as np
 import numpy.typing as npt
 import cv2

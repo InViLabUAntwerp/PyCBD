@@ -3,19 +3,19 @@ This is an example scrip for enabling options that allow you to diagnose potenti
 detection.
 """
 
-from PyCBD.pipelines import CBDPipeline
+from src.PyCBD.pipelines import CBDPipeline
 import matplotlib.pyplot as plt
 import matplotlib.transforms as mtransforms
 import cv2
 import logging
-from PyCBD.logger_configuration import configure_logger
+from src.PyCBD.logger_configuration import configure_logger
 
 
 # Configure the package loggers so info messages get printed in the console
 configure_logger(level=logging.INFO)
 
 # Load the image.
-image_file = 'examples/images/broken.jpg'
+image_file = './examples/images/broken.jpg'
 image = cv2.imread(image_file)
 
 # Pass additional arguments to constructor to activate expansion and prediction.

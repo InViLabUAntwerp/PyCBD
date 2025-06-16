@@ -1,38 +1,34 @@
-[build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
-
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.setuptools.package-data]
 "*" = ["*.jpg"]
-"PyCBD.checkerboard_detection.DLL" = ["*"]
 
 [project]
 name = "PyCBD"
 version = "1.3.0"
 description = "PyCBD: Python Checkerboard Detection Toolbox"
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.10"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
 authors = [
-  { name="Michaël Hillen", email="michael.hillen@uantwerpen.be" },
+    { name = "Michaël Hillen", email = "michael.hillen@uantwerpen.be" },
 ]
 dependencies = [
-  'numpy <= 1.23.5, >= 1.20.0',
-  'matplotlib',
-  'scikit-learn',
-  'scipy',
-  'opencv-python',
-  'gpy',
-  'Pillow',
-  'h5py',
-  'albumentations'
+    'numpy==1.26.4',
+    'matplotlib',
+    'scikit-learn',
+    'scipy',
+    'opencv-python',
+    'gpy',
+    'Pillow',
+    'h5py'
+    'albumentations'
+    #    TODO: add LibCBDetect dependencies when available on PyPi
 ]
 [project.urls]
 "Homepage" = "https://github.com/InViLabUAntwerp/PyCBD"

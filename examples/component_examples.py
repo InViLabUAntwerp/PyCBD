@@ -1,14 +1,13 @@
 """Example for using the different components separately instead of the detection pipeline."""
-
-from PyCBD.checkerboard_detection.checkerboard_detector import CheckerboardDetector
-from PyCBD.checkerboard_enhancement.checkerboard_enhancer import CheckerboardEnhancer
 import matplotlib.pyplot as plt
 import matplotlib.transforms as mtransforms
 import cv2
 
+from src.PyCBD.checkerboard_detection.checkerboard_detector import CheckerboardDetector
+from src.PyCBD.checkerboard_enhancement.checkerboard_enhancer import CheckerboardEnhancer
 
 # Load the image.
-file_name = 'examples/images/flare.jpg'
+file_name = './examples/images/flare.jpg'
 image = cv2.imread(file_name)
 
 # Create a detector

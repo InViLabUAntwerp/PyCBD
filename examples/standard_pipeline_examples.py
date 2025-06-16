@@ -1,19 +1,18 @@
 """Standard examples for using the pipeline."""
 
-from PyCBD.pipelines import CBDPipeline
+from src.PyCBD.pipelines import CBDPipeline
 import matplotlib.pyplot as plt
 import matplotlib.transforms as mtransforms
 import cv2
-
 
 #########
 # Basic #
 #########
 
 # Load the image.
-thermal_image_file = 'examples/images/thermal.tiff'
-flare_image_file = 'examples/images/flare.jpg'
-warped_image_file = 'examples/images/warped.jpg'
+thermal_image_file = './images/thermal.tiff'
+flare_image_file = './images/flare.jpg'
+warped_image_file = './images/warped.jpg'
 image = cv2.imread(thermal_image_file)
 
 # Create an instance of the detector
@@ -23,7 +22,7 @@ detection_pipeline = CBDPipeline()
 # You can optionally give it the checkerboard size, so you'll know whether the coordinates are absolute or relative.
 result, board_uv, board_xy = detection_pipeline.detect_checkerboard(image)
 
-#Plot result
+# Plot result
 fig, ax = plt.subplots()
 ax.imshow(image)
 ax.plot(board_uv[:, 0], board_uv[:, 1], 'r-o', markeredgecolor='k')
@@ -36,7 +35,6 @@ ax.text(board_uv[-1, 0], board_uv[-1, 1], '(' + str(int(board_xy[-1, 0])) + ', '
 plt.title("Detection result")
 plt.axis('off')
 plt.show()
-
 
 ###########################################
 # Expand the board and fill in occlusions #
@@ -51,7 +49,7 @@ detection_pipeline = CBDPipeline(expand=True, predict=True)
 # When expanding it is recommended to give the checkerboard dimensions, so it stops when the entire board has been found.
 result, board_uv, board_xy = detection_pipeline.detect_checkerboard(image, (9, 14))
 
-#Plot result
+# Plot result
 fig, ax = plt.subplots()
 ax.imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
 ax.plot(board_uv[:, 0], board_uv[:, 1], 'g-o', markeredgecolor='k')
@@ -65,7 +63,6 @@ plt.title("Detection result")
 plt.axis('off')
 plt.show()
 
-
 #################
 # Heavy warping #
 #################
@@ -78,7 +75,7 @@ detection_pipeline = CBDPipeline(expand=True, predict=True)
 # Perform detection.
 result, board_uv, board_xy = detection_pipeline.detect_checkerboard(image)
 
-#Plot result
+# Plot result
 fig, ax = plt.subplots()
 ax.imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
 ax.plot(board_uv[:, 0], board_uv[:, 1], 'g-o', markeredgecolor='k')

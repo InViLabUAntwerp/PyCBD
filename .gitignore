@@ -4,7 +4,12 @@ __pycache__/
 # JetBrains IDE
 .idea/
 
+.vscode/
 docs/source/_autosummary
 
 dist/
 *.egg-info
+
+.venv/
+
+build
