@@ -7,6 +7,4 @@ gpy
 Pillow
 h5py
 albumentations
-https://github.com/InViLabUAntwerp/libCBDetect/releases/download/v1.0.0/libcbdetect-1.0.0-cp310-cp310-macosx_14_0_arm64.whl; sys_platform == "darwin"
-https://github.com/InViLabUAntwerp/libCBDetect/releases/download/v1.0.0/libcbdetect-1.0.0-cp310-cp310-win_amd64.whl; sys_platform == "win32"
-https://github.com/InViLabUAntwerp/libCBDetect/releases/download/v1.0.0/libcbdetect-1.0.0-cp310-cp310-manylinux_2_28_x86_64.whl; sys_platform == "linux"
+libCBDetect
