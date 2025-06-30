@@ -16,7 +16,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 authors = [
-    { name = "Michaël Hillen", email = "michael.hillen@uantwerpen.be" },
+    { name = "Michaël Hillen", email = "rhys.evans@uantwerpen.be" },
 ]
 dependencies = [
     'numpy==1.26.4',
@@ -27,8 +27,8 @@ dependencies = [
     'gpy',
     'Pillow',
     'h5py',
-    'albumentations'
-    #    TODO: add LibCBDetect dependencies when available on PyPi
+    'albumentations',
+    'libCBDetect'
 ]
 [project.urls]
 "Homepage" = "https://github.com/InViLabUAntwerp/PyCBD"
