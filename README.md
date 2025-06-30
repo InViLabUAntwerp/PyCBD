@@ -27,7 +27,7 @@ detected in the image. A simple checkerboard detection is performed as follows:
 from PyCBD.pipelines import CBDPipeline
 
 detector = CBDPipeline()
-result, board_uv, board_xy = detection_pipeline.detect_checkerboard(image)
+result, board_uv, board_xy = detector.detect_checkerboard(image)
 ```
 
 The enhancer that handles board expansion and prediction is not used by default and is activated by passing additional
@@ -40,7 +40,7 @@ enhancer will be wrong. The enhancer is activated as follows:
 from PyCBD.pipelines import CBDPipeline
 
 detector = CBDPipeline(expand=True, predict=True)
-result, board_uv, board_xy = detection_pipeline.detect_checkerboard(image, (n_rows, n_cols))
+result, board_uv, board_xy = detector.detect_checkerboard(image, (n_rows, n_cols))
 ```
 
 It is also possible to use another detector in combination with the pipeline. The requirements are that this detector 
@@ -53,7 +53,7 @@ from PyCBD.pipelines import CBDPipeline
 import YourCustomDetector
 
 detector = CBDPipeline(YourCustomDetector())
-result, board_uv, board_xy = detection_pipeline.detect_checkerboard(image)
+result, board_uv, board_xy = detector.detect_checkerboard(image)
 ```
 
 Instead of using the pipeline users can also use the separate `CheckerboardDetector` for detection:
@@ -87,7 +87,7 @@ Finally, the enhancer can be used to remove warping and perspective error from t
 detected. Both `CBDPipeline` and `CheckerboardEnhancer` have a `dewarp_image` method for this purpose:
 
 ```
-dewarped = pipeline_or_enhancer.dewarp_image(image, board_uv, board_xy)
+dewarped = checkerboard_enhancer.dewarp_image(image, board_uv, board_xy)
 ```
 
 In case the detection fails, or you get a weird outcome, you can set certain flags on the different classes to show 
