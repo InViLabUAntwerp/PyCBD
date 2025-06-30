@@ -27,7 +27,7 @@ detected in the image. A simple checkerboard detection is performed as follows:
 from PyCBD.pipelines import CBDPipeline
 
 detector = CBDPipeline()
-result, board_uv, board_xy = detection_pipeline.detect_checkerboard(image)
+result, board_uv, board_xy = detector.detect_checkerboard(image)
 ```
 
 The enhancer that handles board expansion and prediction is not used by default and is activated by passing additional
