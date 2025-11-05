@@ -1,10 +1,11 @@
-numpy==1.24.4
+numpy
 matplotlib
 scikit-learn
 scipy
 opencv-python
-gpy
+torch>=1.9.0
+gpytorch>=1.6.0
 Pillow
-h5py
-albumentations
+h5py>=3.10.0
+albumentations>=2.0.0
 libCBDetect

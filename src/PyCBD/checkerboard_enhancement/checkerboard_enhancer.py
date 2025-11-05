@@ -1,15 +1,81 @@
 """This module contains the checkerboard enhancers."""
 
-import GPy
 from sklearn.preprocessing import StandardScaler
 from scipy.spatial.distance import cdist
 import cv2
-import numpy as np
 import matplotlib.pyplot as plt
 import numpy.typing as npt
 from typing import Tuple, Any, Optional
 import logging
+import torch
+import gpytorch
+from gpytorch.models import ExactGP
+from gpytorch.kernels import RBFKernel, ScaleKernel
+from gpytorch.likelihoods import GaussianLikelihood
+from gpytorch.constraints import Interval
+from gpytorch.priors import UniformPrior
+import numpy as np
+import warnings
 
+
+class GPModel(ExactGP):
+    def __init__(self, train_x, train_y, likelihood, lower_scale=None, higher_scale=None):
+        super().__init__(train_x, train_y, likelihood)
+        self.mean_module = gpytorch.means.ConstantMean()
+
+        # Create base kernel with optional constraints
+        if lower_scale is not None and higher_scale is not None:
+            # Make sure lower_scale is at least 0.01 to avoid numerical issues
+            lower_scale = max(0.01, lower_scale)
+            base_kernel = RBFKernel(
+                lengthscale_constraint=Interval(lower_scale, higher_scale)
+            )
+        else:
+            base_kernel = RBFKernel(
+                lengthscale_constraint=Interval(0.01, 10.0)
+            )
+
+        self.covar_module = ScaleKernel(
+            base_kernel,
+            outputscale_constraint=Interval(0.01, 100000.0)
+        )
+
+    def forward(self, x):
+        mean_x = self.mean_module(x)
+        covar_x = self.covar_module(x)
+        return gpytorch.distributions.MultivariateNormal(mean_x, covar_x)
+
+def predict_noiseless_gpytorch(model, likelihood, X_test, full_cov=False):
+    """
+    Mimic GPy's predict_noiseless(..., full_cov=False).
+    Returns (mean, variance) both of shape (N,) or (N, 1).
+    """
+    model.eval()
+    likelihood.eval()
+
+    X_test = torch.from_numpy(X_test).to(torch.float32)
+
+    with torch.no_grad(), gpytorch.settings.fast_pred_var():
+        preds = likelihood(model(X_test))
+
+    with torch.no_grad():
+        latent_pred = model(X_test)
+
+    mean_norm = latent_pred.mean
+    if full_cov:
+        var_norm = latent_pred.covariance_matrix
+    else:
+        var_norm = latent_pred.variance
+
+    # Denormalize
+    mean = mean_norm * model._y_std + model._y_mean
+    var = var_norm * (model._y_std ** 2)  # variance scales with square
+
+    # Return shapes consistent with GPy: column vectors (N, 1)
+    mean = mean.unsqueeze(-1)  # (N, 1)
+    var = var.unsqueeze(-1) if not full_cov else var  # (N, 1) or (N, N)
+
+    return mean.numpy(), var.numpy()
 
 class CheckerboardEnhancer:
     """Class for checkerboard enhancement with Gaussian processes
@@ -59,15 +125,15 @@ class CheckerboardEnhancer:
         self.max_dist_factor: float = 0.25
         self.must_plot_GP_stuff: bool = False
         self.must_plot_iterations: bool = False
-        self.max_nr_of_iters: int = 25000
+        self.max_nr_of_iters: int = 50
         self.optimizer: str = 'lbfgs'
         self.num_restarts: int = 3
         self.lengthscale_bounded: bool = True
-        self.min_lengthscale: int = 0
-        self.max_lengthscale: int = 25
+        self.min_lengthscale: float = 1e-8
+        self.max_lengthscale: float = 25.0
         self.likelihood_variance_bounded: bool = False
-        self.min_likelihood_variance = 0
-        self.max_likelihood_variance = 1
+        self.min_likelihood_variance = 1e-8
+        self.max_likelihood_variance = 1.0
         self.m_xy_to_u: Any = None
         self.m_xy_to_v: Any = None
         self.scaler: Any = None
@@ -107,15 +173,20 @@ class CheckerboardEnhancer:
             self._logger.info("Starting iteration: " + str(current_iteration))
             self._logger.info("Nr of training points: " + str(board_xy.shape[0]))
 
-            m_xy_to_u, m_xy_to_v, scaler = self._train_checkerboard(board_uv, board_xy)
+            self.m_xy_to_u, self.m_xy_to_v, self.likelihood_u, self.likelihood_v, scaler = self._train_checkerboard(board_uv, board_xy)
 
             # Expand board_xy by expansion_factor
             new_board_xy = self._expand_board_xy(board_xy, expansion_factor, expand_horizontal, expand_vertical)
 
             # Use map to find more corners
             new_board_xy_scaled = scaler.transform(new_board_xy)
-            mean_u_new, cov_u_new = m_xy_to_u.predict_noiseless(new_board_xy_scaled, full_cov=False)
-            mean_v_new, cov_v_new = m_xy_to_v.predict_noiseless(new_board_xy_scaled, full_cov=False)
+            mean_u_new, cov_u_new = predict_noiseless_gpytorch(
+                self.m_xy_to_u, self.likelihood_u, new_board_xy_scaled, full_cov=False
+            )
+
+            mean_v_new, cov_v_new = predict_noiseless_gpytorch(
+                self.m_xy_to_v, self.likelihood_v, new_board_xy_scaled, full_cov=False
+            )
 
             # Remove all predicted points that are not inside the image
             limits_mask = np.squeeze((mean_u_new < 0) | (mean_u_new > image.shape[1]) | (mean_v_new < 0) | (mean_v_new > image.shape[0]))
@@ -143,9 +214,12 @@ class CheckerboardEnhancer:
                                        np.linspace(min_local_y, max_local_y, 50))
                 xy_test = np.vstack((Xi.ravel(), Yj.ravel())).T
                 xy_test_scaled = scaler.transform(xy_test)
-                mean_u, cov_u = m_xy_to_u.predict_noiseless(xy_test_scaled, full_cov=False)
-                mean_v, cov_v = m_xy_to_v.predict_noiseless(xy_test_scaled, full_cov=False)
-
+                mean_u, cov_u = predict_noiseless_gpytorch(
+                    self.m_xy_to_u, self.likelihood_u, xy_test_scaled, full_cov=False
+                )
+                mean_v, cov_v = predict_noiseless_gpytorch(
+                    self.m_xy_to_v, self.likelihood_v, xy_test_scaled, full_cov=False
+                )
                 nr_of_levels = 20
                 levels_u = np.linspace(np.min(mean_u[:, 0]), np.max(mean_u[:, 0]), num=nr_of_levels)
                 levels_v = np.linspace(np.min(mean_v[:, 0]), np.max(mean_v[:, 0]), num=nr_of_levels)
@@ -251,7 +325,7 @@ class CheckerboardEnhancer:
         :returns: board_uv_predicted_grid, the predicted corner image coordinates, and board_xy_predicted_grid, their
            local coordinates.
         """
-        self.m_xy_to_u, self.m_xy_to_v, self.scaler = self._train_checkerboard(board_uv, board_xy)
+        self.m_xy_to_u, self.m_xy_to_v, self.likelihood_u, self.likelihood_v, self.scaler = self._train_checkerboard(board_uv, board_xy)
 
         min_local_x = np.min(board_xy[:, 0])
         max_local_x = np.max(board_xy[:, 0])
@@ -264,8 +338,12 @@ class CheckerboardEnhancer:
         board_xy_predicted_grid_scaled = self.scaler.transform(board_xy_predicted_grid)
 
         # Use GP to predict for entire grid
-        mean_u, cov_u = self.m_xy_to_u.predict_noiseless(board_xy_predicted_grid_scaled, full_cov=False)
-        mean_v, cov_v = self.m_xy_to_v.predict_noiseless(board_xy_predicted_grid_scaled, full_cov=False)
+        mean_u, cov_u = predict_noiseless_gpytorch(
+            self.m_xy_to_u, self.likelihood_u, board_xy_predicted_grid_scaled, full_cov=False
+        )
+        mean_v, cov_v = predict_noiseless_gpytorch(
+            self.m_xy_to_v, self.likelihood_v, board_xy_predicted_grid_scaled, full_cov=False
+        )
         board_uv_predicted_grid = np.concatenate((mean_u, mean_v), axis=1)
         board_uv_predicted_grid_uncertainty = np.concatenate((cov_u, cov_v), axis=1)  # use this as a quality label
 
@@ -278,8 +356,12 @@ class CheckerboardEnhancer:
             [Xi, Yj] = np.meshgrid(np.linspace(min_local_x, max_local_x, 50), np.linspace(min_local_y, max_local_y, 50))
             xy_test = np.vstack((Xi.ravel(), Yj.ravel())).T
             xy_test_scaled = self.scaler.transform(xy_test)
-            mean_u, cov_u = self.m_xy_to_u.predict_noiseless(xy_test_scaled, full_cov=False)
-            mean_v, cov_v = self.m_xy_to_v.predict_noiseless(xy_test_scaled, full_cov=False)
+            mean_u, cov_u = predict_noiseless_gpytorch(
+                self.m_xy_to_u, self.likelihood_u, xy_test_scaled, full_cov=False
+            )
+            mean_v, cov_v = predict_noiseless_gpytorch(
+                self.m_xy_to_v, self.likelihood_v, xy_test_scaled, full_cov=False
+            )
 
             nr_of_levels = 20
             levels_u = np.linspace(np.min(mean_u[:, 0]), np.max(mean_u[:, 0]), num=nr_of_levels)
@@ -341,7 +423,7 @@ class CheckerboardEnhancer:
         :returns: The dewarped image.
         """
         if not use_stored or (self.m_xy_to_u is None or self.m_xy_to_v is None):
-            self.m_xy_to_u, self.m_xy_to_v, self.scaler = self._train_checkerboard(board_uv, board_xy)
+            self.m_xy_to_u, self.m_xy_to_v, self.likelihood_u, self.likelihood_v, self.scaler = self._train_checkerboard(board_uv, board_xy)
 
         min_local_x = np.min(board_xy[:, 0])
         max_local_x = np.max(board_xy[:, 0])
@@ -364,8 +446,13 @@ class CheckerboardEnhancer:
         [xi, yj] = np.meshgrid(xs, ys)
         xy_test = np.vstack((xi.ravel(), yj.ravel())).T
         xy_test_scaled = self.scaler.transform(xy_test)
-        mean_u, _ = self.m_xy_to_u.predict_noiseless(xy_test_scaled, full_cov=False)
-        mean_v, _ = self.m_xy_to_v.predict_noiseless(xy_test_scaled, full_cov=False)
+
+        mean_u, _ = predict_noiseless_gpytorch(
+            self.m_xy_to_u, self.likelihood_u, xy_test_scaled, full_cov=False
+        )
+        mean_v, _ = predict_noiseless_gpytorch(
+            self.m_xy_to_v, self.likelihood_v, xy_test_scaled, full_cov=False
+        )
 
         UVForEntireGridAndAllInBetween = np.concatenate((mean_u, mean_v), axis=1)
         cnt = 0
@@ -383,38 +470,135 @@ class CheckerboardEnhancer:
 
         return dewarped_image
 
-    def _train_gp(self, board_xy_scaled: npt.NDArray, training_image_axis: npt.NDArray) -> Any:
-        """Train model for a single image coordinate axis."""
-        k_xy_to_image_axis = GPy.kern.RBF(2)
+    def _train_gp(self, board_xy_scaled: np.ndarray, training_image_axis: np.ndarray) -> Any:
+        device = torch.device("cpu")
+        X = torch.from_numpy(board_xy_scaled).to(torch.float32).to(device)
+        y = torch.from_numpy(training_image_axis.squeeze()).to(torch.float32).to(device)
 
-        m_xy_to_image_axis = GPy.models.GPRegression(board_xy_scaled, training_image_axis, k_xy_to_image_axis,
-                                                     normalizer=True)
-        m_xy_to_image_axis.kern.lengthscale = 10
-        if self.likelihood_variance_bounded:
-            m_xy_to_image_axis.likelihood.variance.constrain_bounded(self.min_likelihood_variance,
-                                                                     self.max_likelihood_variance)
-            m_xy_to_image_axis.likelihood.variance.fix()
-        if self.lengthscale_bounded:
-            m_xy_to_image_axis.rbf.lengthscale.constrain_bounded(self.min_lengthscale, self.max_lengthscale)
-        m_xy_to_image_axis.optimize_restarts(messages=False, num_restarts=self.num_restarts, verbose=False,
-                                             max_iters=self.max_nr_of_iters, optimizer=self.optimizer)
-        return m_xy_to_image_axis
+        # Normalize
+        y_mean = y.mean()
+        y_std = y.std() + 1e-8
+        y_normalized = (y - y_mean) / y_std
+
+        best_loss = float('inf')
+        best_model = None
+        best_likelihood = None
+
+        for restart in range(self.num_restarts):
+            try:
+                # Setup likelihood with constraints
+                if self.likelihood_variance_bounded:
+                    likelihood = GaussianLikelihood(
+                        noise_constraint=Interval(self.min_likelihood_variance, self.max_likelihood_variance)
+                    )
+                else:
+                    likelihood = GaussianLikelihood(
+                        noise_constraint=Interval(1e-4, 1.0)  # Add reasonable default bounds
+                    )
+
+                # Setup model - now works with or without constraints
+                if self.lengthscale_bounded:
+                    model = GPModel(X, y_normalized, likelihood, self.min_lengthscale, self.max_lengthscale)
+                else:
+                    model = GPModel(X, y_normalized, likelihood)
+
+                # Initialize parameters to stable values
+                with torch.no_grad():
+                    model.covar_module.base_kernel.lengthscale = 1.0  # Start at 1.0, not 10.0!
+                    model.covar_module.outputscale = 1.0
+                    likelihood.noise = 0.1
+
+                model = model.to(device)
+                likelihood = likelihood.to(device)
+
+                # Fix likelihood variance if needed (matching GPy's .fix())
+                if self.likelihood_variance_bounded:
+                    likelihood.noise_covar.raw_noise.requires_grad = False
+
+                model.train()
+                likelihood.train()
+
+                mll = gpytorch.mlls.ExactMarginalLogLikelihood(likelihood, model)
+
+                # Use configurable optimizer (matching GPy version)
+                if self.optimizer == 'lbfgs':
+                    optimizer = torch.optim.LBFGS(model.parameters(), lr=0.1,
+                                                  max_iter=20, line_search_fn='strong_wolfe')
+
+                    # LBFGS requires a closure function
+                    def closure():
+                        optimizer.zero_grad()
+                        output = model(X)
+                        loss = -mll(output, y_normalized)
+                        loss.backward()
+                        return loss
+
+                    # LBFGS optimization loop with higher jitter
+                    with gpytorch.settings.cholesky_jitter(1e-3):
+                        for i in range(self.max_nr_of_iters):
+                            loss = optimizer.step(closure)
+
+                            # Check for invalid loss
+                            if not torch.isfinite(loss):
+                                raise ValueError(f"Non-finite loss at iteration {i}: {loss.item()}")
+
+                else:  # Adam or other optimizers
+                    optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
+
+                    # Standard optimization loop with higher jitter
+                    with gpytorch.settings.cholesky_jitter(1e-3):
+                        for i in range(self.max_nr_of_iters):
+                            optimizer.zero_grad()
+                            output = model(X)
+                            loss = -mll(output, y_normalized)
+
+                            # Check for invalid loss
+                            if not torch.isfinite(loss):
+                                raise ValueError(f"Non-finite loss at iteration {i}: {loss.item()}")
+
+                            loss.backward()
+                            optimizer.step()
+
+                # Successfully completed training
+                current_loss = loss.item()
+                if current_loss < best_loss:
+                    best_loss = current_loss
+                    best_model = model
+                    best_likelihood = likelihood
+
+            except Exception as e:
+                warnings.warn(f"Restart {restart + 1}/{self.num_restarts} failed: {e}")
+                if restart == self.num_restarts - 1 and best_model is None:
+                    # Last restart and no success yet - print more detail
+                    print(f"Data shapes: X={X.shape}, y={y_normalized.shape}")
+                    print(
+                        f"Data ranges: X=[{X.min():.3f}, {X.max():.3f}], y=[{y_normalized.min():.3f}, {y_normalized.max():.3f}]")
+                    print(
+                        f"Constraint settings: likelihood_bounded={self.likelihood_variance_bounded}, lengthscale_bounded={self.lengthscale_bounded}")
+                    if self.lengthscale_bounded:
+                        print(f"Lengthscale bounds: [{self.min_lengthscale}, {self.max_lengthscale}]")
+                continue
+
+        if best_model is None:
+            raise RuntimeError(f"All {self.num_restarts} GP optimization restarts failed. Check data and constraints.")
+
+        best_model._y_mean = y_mean
+        best_model._y_std = y_std
+
+        return best_model, best_likelihood
 
     def _train_checkerboard(self, board_uv, board_xy):
-        """Train models for entire checkerboard."""
         scaler = StandardScaler()
         scaler.fit(board_xy)
         board_xy_scaled = scaler.transform(board_xy)
 
-        # Find map between board_xy and board_uv, i.e. training GPs
-        training_us = board_uv[:, 0]
-        training_us = training_us[:, None]
-        m_xy_to_u = self._train_gp(board_xy_scaled, training_us)
+        training_us = board_uv[:, 0][:, None]
+        m_xy_to_u, likelihood_u = self._train_gp(board_xy_scaled, training_us)  # ← unpack
 
-        training_vs = board_uv[:, 1]
-        training_vs = training_vs[:, None]
-        m_xy_to_v = self._train_gp(board_xy_scaled, training_vs)
-        return m_xy_to_u, m_xy_to_v, scaler
+        training_vs = board_uv[:, 1][:, None]
+        m_xy_to_v, likelihood_v = self._train_gp(board_xy_scaled, training_vs)  # ← unpack
+
+        return m_xy_to_u, m_xy_to_v, likelihood_u, likelihood_v, scaler
 
     @staticmethod
     def _expand_board_xy(board_xy: npt.NDArray, expansion_factor: int, horizontal: bool, vertical: bool) -> npt.NDArray:
