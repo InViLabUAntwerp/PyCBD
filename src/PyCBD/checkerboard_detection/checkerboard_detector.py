@@ -32,13 +32,49 @@ class CheckerboardDetector:
         self.detector.cols = 0
         self.detector.rows = 0
         image = self._prepare_image(image)
+        image, scale_factor = self._rescale_image(image)
         result = self._detect_corners(image)
         if result:
             board_uv, corners_uv = self._extract_corners()
+            if scale_factor != 1.0:
+                board_uv = board_uv / scale_factor
+                corners_uv = corners_uv / scale_factor
             board_xy = self._calculate_local_coordinates(board_uv)
             return board_uv, board_xy, corners_uv
         else:
             return np.array([]), np.array([]), np.array([])
+
+    @staticmethod
+    def _rescale_image(image: npt.NDArray[np.float64]) -> Tuple[npt.NDArray[np.float64], float]:
+        """Rescale the image if any dimension falls outside the optimal detection range [400, 2000] pixels.
+
+        If the largest dimension exceeds 2000px, the image is downsampled so the largest dimension equals 2000px.
+        If the largest dimension is below 400px, the image is upsampled so the largest dimension equals 400px.
+        Aspect ratio is preserved in both cases. A scale factor is returned so that detected corner coordinates
+        can be mapped back to the original image resolution.
+
+        :param image: A 2D normalised float64 grayscale image array.
+        :returns: A tuple of (rescaled_image, scale_factor), where scale_factor is the ratio of the rescaled
+            dimension to the original dimension (scale_factor > 1 means upsampled, < 1 means downsampled,
+            == 1 means unchanged). Divide detected corner coordinates by scale_factor to recover original
+            image coordinates.
+        """
+        height, width = image.shape
+        max_dim = max(height, width)
+
+        if max_dim > 2000:
+            scale_factor = 2000.0 / max_dim
+            interpolation = cv2.INTER_AREA  # Preferred for downsampling: reduces aliasing
+        elif max_dim < 400:
+            scale_factor = 400.0 / max_dim
+            interpolation = cv2.INTER_CUBIC  # Preferred for upsampling: smoother result
+        else:
+            return image, 1.0
+
+        new_width = round(width * scale_factor)
+        new_height = round(height * scale_factor)
+        rescaled_image = cv2.resize(image, (new_width, new_height), interpolation=interpolation)
+        return rescaled_image, scale_factor
 
     def _detect_corners(self, image: npt.NDArray[np.float64]) -> bool:
         """Detect corners in image."""
