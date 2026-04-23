@@ -13,6 +13,7 @@ import cv2
 thermal_image_file = './images/thermal.tiff'
 flare_image_file = './images/flare.jpg'
 warped_image_file = './images/warped.jpg'
+charuco_image_file = './images/charuco.png'
 image = cv2.imread(thermal_image_file)
 
 # Create an instance of the detector
@@ -41,6 +42,33 @@ plt.show()
 ###########################################
 # Load the image.
 image = cv2.imread(flare_image_file)
+
+# Create an instance of the detector and activate expansion and prediction.
+detection_pipeline = CBDPipeline(expand=True, predict=True)
+
+# Perform detection.
+# When expanding it is recommended to give the checkerboard dimensions, so it stops when the entire board has been found.
+result, board_uv, board_xy = detection_pipeline.detect_checkerboard(image, (9, 14))
+
+# Plot result
+fig, ax = plt.subplots()
+ax.imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+ax.plot(board_uv[:, 0], board_uv[:, 1], 'g-o', markeredgecolor='k')
+trans_offset = mtransforms.offset_copy(ax.transData, fig=fig, x=-0.4, y=-0.20, units='inches')
+ax.text(board_uv[0, 0], board_uv[0, 1], '(' + str(int(board_xy[0, 0])) + ', ' + str(int(board_xy[0, 1])) + ')',
+        color="green", transform=trans_offset)
+trans_offset = mtransforms.offset_copy(ax.transData, fig=fig, x=0.05, y=0.05, units='inches')
+ax.text(board_uv[-1, 0], board_uv[-1, 1], '(' + str(int(board_xy[-1, 0])) + ', ' + str(int(board_xy[-1, 1])) + ')',
+        color="green", transform=trans_offset)
+plt.title("Detection result")
+plt.axis('off')
+plt.show()
+
+###########################################
+# Robustness check for charuco board #
+###########################################
+# Load the image.
+image = cv2.imread(charuco_image_file)
 
 # Create an instance of the detector and activate expansion and prediction.
 detection_pipeline = CBDPipeline(expand=True, predict=True)
