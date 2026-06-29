@@ -6,7 +6,7 @@ where = ["src"]
 
 [project]
 name = "PyCBD"
-version = "1.4.1"
+version = "1.4.2"
 description = "PyCBD: Python Checkerboard Detection Toolbox"
 readme = "README.md"
 requires-python = ">=3.10"
