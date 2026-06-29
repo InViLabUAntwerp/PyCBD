@@ -17,6 +17,7 @@ from gpytorch.priors import UniformPrior
 import numpy as np
 import warnings
 
+gpytorch.settings.cholesky_jitter._global_float_value = 1e-3
 
 class GPModel(ExactGP):
     def __init__(self, train_x, train_y, likelihood, lower_scale=None, higher_scale=None):
@@ -45,37 +46,41 @@ class GPModel(ExactGP):
         covar_x = self.covar_module(x)
         return gpytorch.distributions.MultivariateNormal(mean_x, covar_x)
 
-def predict_noiseless_gpytorch(model, likelihood, X_test, full_cov=False):
-    """
-    Mimic GPy's predict_noiseless(..., full_cov=False).
-    Returns (mean, variance) both of shape (N,) or (N, 1).
-    """
+def predict_noiseless_gpytorch(model, likelihood, X_test, full_cov=False, device=None):
     model.eval()
     likelihood.eval()
 
-    X_test = torch.from_numpy(X_test).to(torch.float32)
+    # infer device from model if not provided
+    if device is None:
+        device = next(model.parameters()).device
+
+    X_test = torch.from_numpy(X_test).to(torch.float64).to(device)
+
+    model = model.to(device)
+    batch_size = 4096
+
+    means = []
+    vars = []
 
     with torch.no_grad(), gpytorch.settings.fast_pred_var():
-        preds = likelihood(model(X_test))
+        for start in range(0, X_test.shape[0], batch_size):
+            end = min(start + batch_size, X_test.shape[0])
 
-    with torch.no_grad():
-        latent_pred = model(X_test)
+            pred = model(X_test[start:end])
 
-    mean_norm = latent_pred.mean
-    if full_cov:
-        var_norm = latent_pred.covariance_matrix
-    else:
-        var_norm = latent_pred.variance
+            means.append(pred.mean)
+            vars.append(pred.variance)
 
-    # Denormalize
+    mean_norm = torch.cat(means)
+    var_norm = torch.cat(vars)
+
     mean = mean_norm * model._y_std + model._y_mean
-    var = var_norm * (model._y_std ** 2)  # variance scales with square
+    var = var_norm * (model._y_std ** 2)
 
-    # Return shapes consistent with GPy: column vectors (N, 1)
-    mean = mean.unsqueeze(-1)  # (N, 1)
-    var = var.unsqueeze(-1) if not full_cov else var  # (N, 1) or (N, N)
+    mean = mean.unsqueeze(-1)
+    var = var.unsqueeze(-1) if not full_cov else var
 
-    return mean.numpy(), var.numpy()
+    return mean.cpu().numpy(), var.cpu().numpy()
 
 class CheckerboardEnhancer:
     """Class for checkerboard enhancement with Gaussian processes
@@ -129,15 +134,23 @@ class CheckerboardEnhancer:
         self.optimizer: str = 'lbfgs'
         self.num_restarts: int = 3
         self.lengthscale_bounded: bool = True
-        self.min_lengthscale: float = 1e-8
-        self.max_lengthscale: float = 25.0
+        self.min_lengthscale: float = 0.1
+        self.max_lengthscale: float = 50.0
         self.likelihood_variance_bounded: bool = False
-        self.min_likelihood_variance = 1e-8
+        self.min_likelihood_variance = 1e-6
         self.max_likelihood_variance = 1.0
         self.m_xy_to_u: Any = None
         self.m_xy_to_v: Any = None
         self.scaler: Any = None
         self.dewarped_res_factor = 50
+
+        print(f"checking cuda availability: {torch.cuda.is_available()}")
+        if torch.cuda.is_available():
+            print("Using Cuda")
+            self.device = torch.device('cuda')
+        else:
+            print("Falling back to CPU")
+            self.device = torch.device("cpu")
 
     def fit_and_expand_board(self, image: npt.NDArray, board_uv: npt.NDArray, board_xy: npt.NDArray,
                              corners_uv: npt.NDArray, board_shape: Optional[Tuple[int, int]] = None) -> Tuple[npt.NDArray, npt.NDArray]:
@@ -181,11 +194,11 @@ class CheckerboardEnhancer:
             # Use map to find more corners
             new_board_xy_scaled = scaler.transform(new_board_xy)
             mean_u_new, cov_u_new = predict_noiseless_gpytorch(
-                self.m_xy_to_u, self.likelihood_u, new_board_xy_scaled, full_cov=False
+                self.m_xy_to_u, self.likelihood_u, new_board_xy_scaled, full_cov=False, device=self.device
             )
 
             mean_v_new, cov_v_new = predict_noiseless_gpytorch(
-                self.m_xy_to_v, self.likelihood_v, new_board_xy_scaled, full_cov=False
+                self.m_xy_to_v, self.likelihood_v, new_board_xy_scaled, full_cov=False, device=self.device
             )
 
             # Remove all predicted points that are not inside the image
@@ -455,30 +468,38 @@ class CheckerboardEnhancer:
         )
 
         UVForEntireGridAndAllInBetween = np.concatenate((mean_u, mean_v), axis=1)
-        cnt = 0
-        for j in range(res_v):
-            for i in range(res_u):
-                new_UV = UVForEntireGridAndAllInBetween[cnt, :]
-                u = int(new_UV[0])
-                v = int(new_UV[1])
-                if u < image.shape[1] and v < image.shape[0] and u > 0 and v > 0:
-                    new_pixel_value = image[v, u]
-                else:
-                    new_pixel_value = (0, 0, 0)
-                dewarped_image[res_v - 1 - j, i] = new_pixel_value
-                cnt += 1
+
+        u_coords = UVForEntireGridAndAllInBetween[:, 0].astype(int)
+        v_coords = UVForEntireGridAndAllInBetween[:, 1].astype(int)
+
+        # Vectorized index mapping
+        cnt = np.arange(res_v * res_u)
+        j = cnt // res_u
+        target_row = res_v - 1 - j
+        target_col = cnt % res_u
+
+        # Valid bounds (using >= 0 instead of > 0 to avoid losing the first row/col)
+        valid_mask = (u_coords >= 0) & (u_coords < image.shape[1]) & \
+                     (v_coords >= 0) & (v_coords < image.shape[0])
+
+        # Assign valid pixels in one go (milliseconds instead of seconds)
+        dewarped_image[target_row[valid_mask], target_col[valid_mask]] = image[
+            v_coords[valid_mask], u_coords[valid_mask]]
 
         return dewarped_image
 
     def _train_gp(self, board_xy_scaled: np.ndarray, training_image_axis: np.ndarray) -> Any:
-        device = torch.device("cpu")
-        X = torch.from_numpy(board_xy_scaled).to(torch.float32).to(device)
-        y = torch.from_numpy(training_image_axis.squeeze()).to(torch.float32).to(device)
+        X = torch.from_numpy(board_xy_scaled).to(torch.float64).to(self.device)
+        y = torch.from_numpy(training_image_axis.squeeze()).to(torch.float64).to(self.device)
 
         # Normalize
         y_mean = y.mean()
-        y_std = y.std() + 1e-8
-        y_normalized = (y - y_mean) / y_std
+        y_std = y.std()
+        if y_std < 1e-6:
+            y_std = 1.0  # or use IQR-based scaling instead
+        else:
+            y_std = y_std.item()
+        y_normalized = (y - y_mean) / (y_std + 1e-8)
 
         best_loss = float('inf')
         best_model = None
@@ -508,8 +529,8 @@ class CheckerboardEnhancer:
                     model.covar_module.outputscale = 1.0
                     likelihood.noise = 0.1
 
-                model = model.to(device)
-                likelihood = likelihood.to(device)
+                model = model.to(self.device)
+                likelihood = likelihood.to(self.device)
 
                 # Fix likelihood variance if needed (matching GPy's .fix())
                 if self.likelihood_variance_bounded:
@@ -523,41 +544,47 @@ class CheckerboardEnhancer:
                 # Use configurable optimizer (matching GPy version)
                 if self.optimizer == 'lbfgs':
                     optimizer = torch.optim.LBFGS(model.parameters(), lr=0.1,
-                                                  max_iter=20, line_search_fn='strong_wolfe')
+                                                  max_iter=5, line_search_fn='strong_wolfe')
 
                     # LBFGS requires a closure function
                     def closure():
                         optimizer.zero_grad()
                         output = model(X)
-                        loss = -mll(output, y_normalized)
+                        loss = -mll(output, y_normalized).to(self.device)
                         loss.backward()
                         return loss
 
-                    # LBFGS optimization loop with higher jitter
-                    with gpytorch.settings.cholesky_jitter(1e-3):
-                        for i in range(self.max_nr_of_iters):
-                            loss = optimizer.step(closure)
-
-                            # Check for invalid loss
-                            if not torch.isfinite(loss):
-                                raise ValueError(f"Non-finite loss at iteration {i}: {loss.item()}")
-
                 else:  # Adam or other optimizers
                     optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
+                prev_loss = float('inf')
+                with gpytorch.settings.cholesky_jitter(1e-3):
+                    for i in range(self.max_nr_of_iters):
+                        if self.optimizer == 'lbfgs':
+                            def closure():
+                                optimizer.zero_grad()
+                                output = model(X)
+                                loss = -mll(output, y_normalized)
+                                loss.backward()
+                                return loss
 
-                    # Standard optimization loop with higher jitter
-                    with gpytorch.settings.cholesky_jitter(1e-3):
-                        for i in range(self.max_nr_of_iters):
+                            loss = optimizer.step(closure)
+                        else:
                             optimizer.zero_grad()
                             output = model(X)
                             loss = -mll(output, y_normalized)
-
-                            # Check for invalid loss
-                            if not torch.isfinite(loss):
-                                raise ValueError(f"Non-finite loss at iteration {i}: {loss.item()}")
-
                             loss.backward()
                             optimizer.step()
+
+                        # --- EARLY STOPPING LOGIC ---
+                        if torch.isfinite(loss):
+                            current_loss = loss.item()
+                            # Stop if the loss hasn't improved by at least 1e-5
+                            if abs(current_loss - prev_loss) < 1e-5:
+                                self._logger.info(f"Early stopping at iteration {i} (loss converged)")
+                                break
+                            prev_loss = current_loss
+                        else:
+                            raise ValueError(f"Non-finite loss at iteration {i}")
 
                 # Successfully completed training
                 current_loss = loss.item()
@@ -588,6 +615,11 @@ class CheckerboardEnhancer:
         return best_model, best_likelihood
 
     def _train_checkerboard(self, board_uv, board_xy):
+        board_xy_rounded = np.round(board_xy, decimals=6)
+        _, unique_indices = np.unique(board_xy_rounded, axis=0, return_index=True)
+        board_xy = board_xy[unique_indices]
+        board_uv = board_uv[unique_indices]
+
         scaler = StandardScaler()
         scaler.fit(board_xy)
         board_xy_scaled = scaler.transform(board_xy)

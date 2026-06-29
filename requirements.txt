@@ -1,4 +1,5 @@
 numpy
+libCBDetect
 matplotlib
 scikit-learn
 scipy
@@ -8,4 +9,3 @@ gpytorch>=1.6.0
 Pillow
 h5py>=3.10.0
 albumentations>=2.0.0
-libCBDetect

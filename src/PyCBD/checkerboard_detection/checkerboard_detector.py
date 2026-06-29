@@ -17,6 +17,8 @@ class CheckerboardDetector:
         self.detector.show_grow_processing = False
         self.detector.overlay = True
         self.detector.show_debug_image = False
+        self.high_resolution_threshold = 2000
+        self.low_resolution_threshold = 400
 
     def detect_checkerboard(self, image: npt.NDArray[np.float64]) -> Tuple[npt.NDArray, npt.NDArray, npt.NDArray]:
         """Detect the checkerboard in the image.
@@ -32,13 +34,65 @@ class CheckerboardDetector:
         self.detector.cols = 0
         self.detector.rows = 0
         image = self._prepare_image(image)
+        image, scale_factor = self._rescale_image(image)
         result = self._detect_corners(image)
         if result:
             board_uv, corners_uv = self._extract_corners()
+            if scale_factor != 1.0:
+                board_uv = board_uv / scale_factor
+                corners_uv = corners_uv / scale_factor
             board_xy = self._calculate_local_coordinates(board_uv)
             return board_uv, board_xy, corners_uv
         else:
             return np.array([]), np.array([]), np.array([])
+
+    def _rescale_image(self, image: npt.NDArray[np.float64]) -> Tuple[npt.NDArray[np.float64], float]:
+        """Rescale the image by iteratively halving or doubling dimensions until the largest
+        dimension falls within the optimal detection range [400, 2000] pixels.
+        Since each step is a strict factor of 2, dimensions always remain exact integers
+        with no rounding required. A maximum of 4 downsampling iterations is enforced;
+        a warning is printed if this limit is hit.
+        Aspect ratio is preserved throughout. A cumulative scale factor is returned so that
+        detected corner coordinates can be mapped back to the original image resolution.
+
+        :param image: A 2D normalised float64 grayscale image array.
+        :returns: A tuple of (rescaled_image, scale_factor), where scale_factor is the ratio of the
+            rescaled dimension to the original dimension (scale_factor > 1 means upsampled, < 1 means
+            downsampled, == 1 means unchanged). Divide detected corner coordinates by scale_factor to
+            recover original image coordinates.
+        """
+        MAX_DOWNSAMPLE_ITERATIONS = 4
+        RED = "\033[91m"
+        RESET = "\033[0m"
+
+        current_image = image
+        cumulative_scale = 1.0
+        iterations = 0
+
+        # Iteratively halve until largest dimension is at or below 2000
+        while max(current_image.shape) > self.high_resolution_threshold:
+            if iterations >= MAX_DOWNSAMPLE_ITERATIONS:
+                print(
+                    f"{RED}WARNING: Image could not be downsampled to below 2000px within "
+                    f"{MAX_DOWNSAMPLE_ITERATIONS} halvings. "
+                    f"Largest dimension is still {max(current_image.shape)}px.{RESET}"
+                )
+                break
+            h, w = current_image.shape
+            current_image = cv2.resize(current_image, (w // 2, h // 2), interpolation=cv2.INTER_LINEAR_EXACT)
+            cumulative_scale *= 0.5
+            iterations += 1
+
+        # Iteratively double until largest dimension is at or above 400
+        while max(current_image.shape) < self.low_resolution_threshold:
+            h, w = current_image.shape
+            current_image = cv2.resize(current_image, (w * 2, h * 2), interpolation=cv2.INTER_LINEAR_EXACT)
+            cumulative_scale *= 2.0
+
+        if cumulative_scale == 1.0:
+            return image, 1.0
+
+        return current_image, cumulative_scale
 
     def _detect_corners(self, image: npt.NDArray[np.float64]) -> bool:
         """Detect corners in image."""
