@@ -8,7 +8,7 @@ import cv2
 #########
 # Basic #
 #########
-
+print("If you want to change want to test GPy or GPyTorch edit the init import.")
 # Load the image.
 thermal_image_file = './images/thermal.tiff'
 flare_image_file = './images/flare.jpg'
