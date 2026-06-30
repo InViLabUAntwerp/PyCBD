@@ -6,7 +6,7 @@ where = ["src"]
 
 [project]
 name = "PyCBD"
-version = "1.4.2"
+version = "1.5.0"
 description = "PyCBD: Python Checkerboard Detection Toolbox"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -19,13 +19,13 @@ authors = [
     { name = "Michaël Hillen", email = "rhys.evans@uantwerpen.be" },
 ]
 dependencies = [
-    'numpy==1.26.4',
+    'numpy>1.26.4',
     'matplotlib',
     'scikit-learn',
     'scipy',
     'opencv-python',
-    'torch>=1.9.0',
-    'gpytorch>=1.6.0',
+    'torch>=2.0',
+    'gpytorch>=1.14',
     'Pillow',
     'h5py',
     'albumentations',
