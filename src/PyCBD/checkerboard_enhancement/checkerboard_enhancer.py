@@ -144,12 +144,12 @@ class CheckerboardEnhancer:
         self.scaler: Any = None
         self.dewarped_res_factor = 50
 
-        print(f"checking cuda availability: {torch.cuda.is_available()}")
+        self._logger.debug(f"checking cuda availability: {torch.cuda.is_available()}")
         if torch.cuda.is_available():
-            print("Using Cuda")
+            self._logger.debug("Using Cuda")
             self.device = torch.device('cuda')
         else:
-            print("Falling back to CPU")
+            self._logger.debug("Falling back to CPU")
             self.device = torch.device("cpu")
 
     def fit_and_expand_board(self, image: npt.NDArray, board_uv: npt.NDArray, board_xy: npt.NDArray,
